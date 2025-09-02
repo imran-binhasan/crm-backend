@@ -154,9 +154,7 @@ async function main() {
       lastName: 'User',
       email: 'admin@example.com',
       password: hashedPassword,
-      role: {
-        connect: { id: adminRole.id }
-      }
+      roleId: adminRole.id,
     },
   });
 
