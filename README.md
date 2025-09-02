@@ -1,98 +1,412 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# CRM Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A comprehensive Customer Relationship Management (CRM) backend built with NestJS, GraphQL, Prisma, and PostgreSQL. Features enterprise-grade RBAC (Role-Based Access Control), authentication, and industry best practices.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 🚀 Features
 
-## Description
+- **🔐 Advanced Authentication & Authorization**
+  - JWT-based authentication with refresh tokens
+  - Dynamic RBAC with resource-based permissions  
+  - Role hierarchy and conditional permissions
+  - Permission caching for optimal performance
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **🎯 GraphQL API**
+  - Type-safe GraphQL schema
+  - Query complexity analysis
+  - Playground for development
+  - Real-time subscriptions ready
 
-## Project setup
+- **📊 CRM Entities**
+  - Users, Roles, and Permissions management
+  - Contacts and Companies
+  - Leads and Deals pipeline
+  - Activities and Notes tracking
 
-```bash
-$ yarn install
-```
+- **🛡️ Security & Performance**
+  - Security headers with Helmet
+  - Rate limiting and throttling
+  - Input validation and sanitization
+  - Performance monitoring and logging
+  - Health check endpoints
 
-## Compile and run the project
+- **🏗️ Enterprise Architecture**
+  - Clean architecture patterns
+  - Dependency injection
+  - Global error handling
+  - Request/Response interceptors
+  - Audit logging
 
-```bash
-# development
-$ yarn run start
+## 🛠️ Tech Stack
 
-# watch mode
-$ yarn run start:dev
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **NestJS** | ^11.0.1 | Node.js framework |
+| **GraphQL** | ^16.11.0 | API query language |
+| **Prisma** | ^5.20.0 | Database ORM |
+| **PostgreSQL** | Latest | Primary database |
+| **TypeScript** | ^5.7.3 | Type safety |
+| **Jest** | ^30.0.0 | Testing framework |
 
-# production mode
-$ yarn run start:prod
-```
+## 📋 Prerequisites
 
-## Run tests
+- Node.js 18+ 
+- PostgreSQL 14+
+- Yarn package manager
+- Git
 
-```bash
-# unit tests
-$ yarn run test
+## 🚀 Quick Start
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 1. Clone & Install
 
 ```bash
-$ yarn install -g @nestjs/mau
-$ mau deploy
+git clone <repository-url>
+cd crm-backend
+yarn install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 2. Environment Setup
 
-## Resources
+```bash
+# Copy environment template
+cp .env.example .env
 
-Check out a few resources that may come in handy when working with NestJS:
+# Edit .env with your database credentials
+vim .env
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 3. Database Setup
 
-## Support
+```bash
+# Generate Prisma client
+yarn prisma:generate
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+# Push database schema
+yarn prisma:push
 
-## Stay in touch
+# Seed initial data (admin user, roles, permissions)
+yarn db:seed
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+### 4. Start Development Server
 
-## License
+```bash
+# Development mode with hot reload
+yarn start:dev
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+# Production mode
+yarn start:prod
+```
+
+## 📱 API Endpoints
+
+### GraphQL
+- **Endpoint**: `http://localhost:3000/graphql`
+- **Playground**: `http://localhost:3000/graphql` (dev only)
+
+### REST (Health & Monitoring)
+- **Health Check**: `GET /api/health`
+- **Readiness**: `GET /api/health/ready`  
+- **Liveness**: `GET /api/health/live`
+
+## 🔑 Default Credentials
+
+After running the seed script:
+
+```
+Email: admin@example.com
+Password: admin123
+```
+
+⚠️ **Change these credentials immediately in production!**
+
+## 📚 GraphQL Schema
+
+### Sample Queries
+
+```graphql
+# User authentication
+mutation Login {
+  login(loginInput: { email: "admin@example.com", password: "admin123" }) {
+    accessToken
+    refreshToken
+    user {
+      id
+      email
+      firstName
+      lastName
+    }
+  }
+}
+
+# Get current user
+query Me {
+  me {
+    id
+    email
+    firstName
+    lastName
+    role {
+      name
+      permissions {
+        permission {
+          resource
+          action
+        }
+      }
+    }
+  }
+}
+
+# List users (with RBAC)
+query Users {
+  users {
+    id
+    firstName
+    lastName
+    email
+    isActive
+    role {
+      name
+    }
+  }
+}
+
+# Create user (admin only)
+mutation CreateUser {
+  createUser(createUserInput: {
+    firstName: "John"
+    lastName: "Doe"
+    email: "john@example.com"
+    password: "password123"
+    roleId: "role-id-here"
+  }) {
+    id
+    email
+  }
+}
+```
+
+## 🔒 RBAC System
+
+### Role Hierarchy
+1. **Super Admin** - Full system access
+2. **Admin** - Manage users, roles, and permissions
+3. **Manager** - Manage CRM data (leads, deals, contacts)
+4. **User** - Basic read access
+
+### Permission Structure
+- **Resource**: `user`, `role`, `permission`, `contact`, `company`, `lead`, `deal`
+- **Action**: `create`, `read`, `update`, `delete`, `manage`, `assign`
+- **Conditions**: `own`, `team`, `department` (conditional access)
+
+### Permission Examples
+```typescript
+// Check if user can create contacts
+await rbacService.hasPermission(userId, {
+  resource: ResourceType.CONTACT,
+  action: ActionType.CREATE
+});
+
+// Check if user can read own contacts only
+await rbacService.hasPermission(userId, {
+  resource: ResourceType.CONTACT,
+  action: ActionType.READ,
+  conditions: [{ field: 'createdById', operator: 'own', value: userId }]
+});
+```
+
+## 🗄️ Database Schema
+
+### Core Tables
+- `users` - User accounts with authentication
+- `roles` - User roles definition
+- `permissions` - System permissions
+- `role_permissions` - Role-permission mapping
+
+### CRM Tables  
+- `contacts` - Individual contacts
+- `companies` - Company/organization records
+- `leads` - Sales leads
+- `deals` - Sales opportunities
+- `activities` - Tasks, calls, meetings
+- `notes` - Text notes on any entity
+
+## 🧪 Testing
+
+```bash
+# Unit tests
+yarn test
+
+# E2E tests
+yarn test:e2e
+
+# Test coverage
+yarn test:cov
+
+# Watch mode
+yarn test:watch
+```
+
+## 🚀 Deployment
+
+### Docker Deployment
+
+```dockerfile
+# Dockerfile example
+FROM node:18-alpine
+WORKDIR /app
+COPY package*.json ./
+RUN yarn install --production
+COPY . .
+RUN yarn build
+EXPOSE 3000
+CMD ["yarn", "start:prod"]
+```
+
+### Environment Variables (Production)
+
+```bash
+NODE_ENV=production
+DATABASE_URL=postgresql://user:pass@host:5432/db
+JWT_SECRET=your-super-secret-production-key
+FRONTEND_URL=https://your-frontend-domain.com
+```
+
+## 📊 Monitoring & Logging
+
+### Health Checks
+- Database connectivity
+- Memory usage
+- Application uptime
+- Service readiness
+
+### Performance Monitoring
+- Slow query detection (>1s)
+- Request duration tracking
+- Memory usage alerts
+- Error rate monitoring
+
+### Security Features
+- Request ID tracking
+- Rate limiting (100 req/min)
+- Security headers (Helmet)
+- Input validation & sanitization
+- SQL injection protection
+
+## 🔧 Development
+
+### Project Structure
+
+```
+src/
+├── auth/           # Authentication module
+├── users/          # User management
+├── roles/          # Role management  
+├── permissions/    # Permission management
+├── common/         # Shared components
+│   ├── decorators/ # Custom decorators
+│   ├── filters/    # Exception filters
+│   ├── guards/     # Auth guards
+│   ├── interceptors/ # Request/response interceptors
+│   ├── middleware/ # Custom middleware
+│   ├── pipes/      # Validation pipes
+│   └── rbac/       # RBAC service
+├── health/         # Health check endpoints
+└── main.ts         # Application bootstrap
+```
+
+### Code Style
+
+```bash
+# Format code
+yarn format
+
+# Lint code
+yarn lint
+
+# Fix lint issues
+yarn lint --fix
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 API Documentation
+
+GraphQL schema is auto-generated and available at:
+- Development: `http://localhost:3000/graphql`
+- Schema file: `src/schema.gql` (auto-generated)
+
+## 🔄 Database Migrations
+
+```bash
+# Create migration
+yarn prisma migrate dev --name migration-name
+
+# Deploy migrations
+yarn prisma migrate deploy
+
+# Reset database (dev only)
+yarn prisma migrate reset
+```
+
+## 📈 Performance Tips
+
+1. **Database Optimization**
+   - Use database indices on frequently queried fields
+   - Implement connection pooling
+   - Monitor slow queries
+
+2. **Caching Strategy**
+   - RBAC permission caching (5min TTL)
+   - User session caching
+   - Query result caching
+
+3. **Security Best Practices**
+   - Regular security audits
+   - Dependency vulnerability scanning
+   - Rate limiting per IP/user
+   - Input validation at all levels
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Error**
+   ```bash
+   # Check DATABASE_URL in .env
+   # Ensure PostgreSQL is running
+   yarn prisma db push
+   ```
+
+2. **Permission Errors**
+   ```bash
+   # Re-run seed to restore default permissions
+   yarn db:seed
+   ```
+
+3. **Build Errors**
+   ```bash
+   # Clear node_modules and reinstall
+   rm -rf node_modules yarn.lock
+   yarn install
+   ```
+
+## 📄 License
+
+This project is [MIT licensed](LICENSE).
+
+## 👥 Support
+
+- Create an [issue](../../issues) for bug reports
+- Star ⭐ this repo if you find it helpful
+- Follow the project for updates
+
+---
+
+**Built with ❤️ using NestJS, GraphQL, and TypeScript**
