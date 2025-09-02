@@ -4,7 +4,6 @@ import { Contact } from '../../contacts/entities/contact.entity';
 import { Company } from '../../companies/entities/company.entity';
 import { Lead } from '../../leads/entities/lead.entity';
 import { Deal } from '../../deals/entities/deal.entity';
-import { Activity } from '../../activities/entities/activity.entity';
 
 @ObjectType()
 export class Note {
@@ -50,12 +49,6 @@ export class Note {
 
   @Field(() => Deal, { nullable: true })
   deal?: Deal;
-
-  @Field(() => String, { nullable: true })
-  activityId?: string;
-
-  @Field(() => Activity, { nullable: true })
-  activity?: Activity;
 
   // System fields
   @Field(() => String)

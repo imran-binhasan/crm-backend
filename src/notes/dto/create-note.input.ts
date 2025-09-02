@@ -49,9 +49,4 @@ export class CreateNoteInput {
   @IsString()
   @IsOptional()
   dealId?: string;
-
-  @Field(() => String, { nullable: true })
-  @IsString()
-  @IsOptional()
-  activityId?: string;
 }

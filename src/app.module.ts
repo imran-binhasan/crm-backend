@@ -14,6 +14,12 @@ import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 import { RbacModule } from './common/rbac/rbac.module';
 import { HealthModule } from './common/health/health.module';
+import { ContactsModule } from './contacts/contacts.module';
+import { CompaniesModule } from './companies/companies.module';
+import { LeadsModule } from './leads/leads.module';
+import { DealsModule } from './deals/deals.module';
+import { ActivitiesModule } from './activities/activities.module';
+import { NotesModule } from './notes/notes.module';
 
 // Middleware
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -58,6 +64,12 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     RolesModule,
     PermissionsModule,
     HealthModule,
+    ContactsModule,
+    CompaniesModule,
+    LeadsModule,
+    DealsModule,
+    ActivitiesModule,
+    NotesModule,
   ],
   providers: [
     AppResolver, 
