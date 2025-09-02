@@ -52,7 +52,13 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
       formatError: (error) => {
         // Don't expose internal errors in production
         if (process.env.NODE_ENV === 'production') {
-          delete error.extensions?.exception?.stacktrace;
+          if (
+            error.extensions &&
+            error.extensions.exception &&
+            Object.prototype.hasOwnProperty.call(error.extensions.exception, 'stacktrace')
+          ) {
+            delete (error.extensions.exception as { stacktrace?: unknown }).stacktrace;
+          }
         }
         return error;
       },
