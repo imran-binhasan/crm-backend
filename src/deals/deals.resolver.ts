@@ -5,19 +5,15 @@ import { Deal } from './entities/deal.entity';
 import { CreateDealInput } from './dto/create-deal.input';
 import { UpdateDealInput } from './dto/update-deal.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RbacGuard } from '../common/guards/rbac.guard';
-import { RequirePermissions } from '../common/decorators/require-permissions.decorator';
-import { ResourceType, ActionType } from '../common/rbac/permission.types';
 
 @Resolver(() => Deal)
-@UseGuards(JwtAuthGuard, RbacGuard)
+@UseGuards(JwtAuthGuard)
 export class DealsResolver {
   private readonly logger = new Logger(DealsResolver.name);
 
   constructor(private readonly dealsService: DealsService) {}
 
   @Mutation(() => Deal)
-  @RequirePermissions({ resource: ResourceType.DEAL, action: ActionType.CREATE })
   async createDeal(
     @Args('createDealInput') createDealInput: CreateDealInput,
     @Context() context: any,
@@ -31,7 +27,6 @@ export class DealsResolver {
   }
 
   @Query(() => [Deal], { name: 'deals' })
-  @RequirePermissions({ resource: ResourceType.DEAL, action: ActionType.READ })
   async findAll(
     @Args('take', { type: () => Int, nullable: true }) take?: number,
     @Args('skip', { type: () => Int, nullable: true }) skip?: number,
@@ -41,7 +36,6 @@ export class DealsResolver {
   }
 
   @Query(() => Deal, { name: 'deal' })
-  @RequirePermissions({ resource: ResourceType.DEAL, action: ActionType.READ })
   async findOne(
     @Args('id', { type: () => String }) id: string,
     @Context() context: any,
@@ -50,7 +44,6 @@ export class DealsResolver {
   }
 
   @Mutation(() => Deal)
-  @RequirePermissions({ resource: ResourceType.DEAL, action: ActionType.UPDATE })
   async updateDeal(
     @Args('updateDealInput') updateDealInput: UpdateDealInput,
     @Context() context: any,
@@ -64,7 +57,6 @@ export class DealsResolver {
   }
 
   @Mutation(() => Deal)
-  @RequirePermissions({ resource: ResourceType.DEAL, action: ActionType.DELETE })
   async removeDeal(
     @Args('id', { type: () => String }) id: string,
     @Context() context: any,
