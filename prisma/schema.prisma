@@ -1,0 +1,400 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// RBAC Models
+model User {
+  id        String   @id @default(uuid())
+  firstName String   @db.VarChar(50)
+  lastName  String   @db.VarChar(50)
+  email     String   @unique @db.VarChar(255)
+  password  String
+  phone     String?  @db.VarChar(20)
+  image     String?
+  isActive  Boolean  @default(true)
+  roleId    String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  role      Role     @relation(fields: [roleId], references: [id])
+  
+  // CRM specific relations
+  assignedLeads     Lead[]   @relation("AssignedUser")
+  createdLeads      Lead[]   @relation("CreatedUser")
+  assignedDeals     Deal[]   @relation("AssignedUser")
+  createdDeals      Deal[]   @relation("CreatedUser")
+  assignedContacts  Contact[] @relation("AssignedUser")
+  createdContacts   Contact[] @relation("CreatedUser")
+  assignedCompanies Company[] @relation("AssignedUser")
+  createdCompanies  Company[] @relation("CreatedUser")
+  
+  activities        Activity[]
+  notes            Note[]
+
+  @@map("users")
+}
+
+model Role {
+  id          String @id @default(uuid())
+  name        String @unique @db.VarChar(50)
+  description String?
+  isActive    Boolean @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String @id @default(uuid())
+  resource    String @db.VarChar(50) // e.g., 'lead', 'deal', 'contact', 'company', 'user'
+  action      String @db.VarChar(50) // e.g., 'create', 'read', 'update', 'delete', 'manage'
+  description String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  roles RolePermission[]
+
+  @@unique([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+  
+  // Relations
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// CRM Entities
+
+model Contact {
+  id           String  @id @default(uuid())
+  firstName    String  @db.VarChar(50)
+  lastName     String  @db.VarChar(50)
+  email        String? @db.VarChar(255)
+  phone        String? @db.VarChar(20)
+  mobile       String? @db.VarChar(20)
+  jobTitle     String? @db.VarChar(100)
+  department   String? @db.VarChar(100)
+  companyId    String?
+  assignedToId String?
+  createdById  String
+  
+  // Address fields
+  street       String?
+  city         String?
+  state        String?
+  zipCode      String? @db.VarChar(20)
+  country      String? @db.VarChar(100)
+  
+  // Social media
+  linkedinUrl  String?
+  twitterUrl   String?
+  websiteUrl   String?
+  
+  // Status and source
+  status       ContactStatus @default(ACTIVE)
+  source       String?       @db.VarChar(50) // e.g., 'website', 'referral', 'cold_call'
+  
+  isActive     Boolean @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  company     Company? @relation(fields: [companyId], references: [id])
+  assignedTo  User?    @relation("AssignedUser", fields: [assignedToId], references: [id])
+  createdBy   User     @relation("CreatedUser", fields: [createdById], references: [id])
+  
+  leads       Lead[]
+  deals       Deal[]
+  activities  Activity[]
+  notes       Note[]
+
+  @@map("contacts")
+}
+
+model Company {
+  id           String @id @default(uuid())
+  name         String @db.VarChar(255)
+  industry     String? @db.VarChar(100)
+  size         CompanySize?
+  revenue      Decimal? @db.Decimal(15, 2)
+  website      String?
+  phone        String? @db.VarChar(20)
+  email        String? @db.VarChar(255)
+  assignedToId String?
+  createdById  String
+  
+  // Address fields
+  street       String?
+  city         String?
+  state        String?
+  zipCode      String? @db.VarChar(20)
+  country      String? @db.VarChar(100)
+  
+  // Social media
+  linkedinUrl  String?
+  twitterUrl   String?
+  
+  status       CompanyStatus @default(ACTIVE)
+  isActive     Boolean @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  assignedTo User?     @relation("AssignedUser", fields: [assignedToId], references: [id])
+  createdBy  User      @relation("CreatedUser", fields: [createdById], references: [id])
+  
+  contacts   Contact[]
+  leads      Lead[]
+  deals      Deal[]
+  activities Activity[]
+  notes      Note[]
+
+  @@map("companies")
+}
+
+model Lead {
+  id           String @id @default(uuid())
+  title        String @db.VarChar(255)
+  contactId    String?
+  companyId    String?
+  assignedToId String?
+  createdById  String
+  
+  value        Decimal? @db.Decimal(15, 2)
+  source       String?  @db.VarChar(50)
+  status       LeadStatus @default(NEW)
+  priority     Priority @default(MEDIUM)
+  
+  // Lead specific fields
+  expectedCloseDate DateTime?
+  description       String?
+  
+  isActive     Boolean @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  contact    Contact? @relation(fields: [contactId], references: [id])
+  company    Company? @relation(fields: [companyId], references: [id])
+  assignedTo User?    @relation("AssignedUser", fields: [assignedToId], references: [id])
+  createdBy  User     @relation("CreatedUser", fields: [createdById], references: [id])
+  
+  deals      Deal[]
+  activities Activity[]
+  notes      Note[]
+
+  @@map("leads")
+}
+
+model Deal {
+  id           String @id @default(uuid())
+  title        String @db.VarChar(255)
+  contactId    String?
+  companyId    String?
+  leadId       String?
+  assignedToId String?
+  createdById  String
+  
+  value        Decimal @db.Decimal(15, 2)
+  stage        DealStage @default(PROSPECTING)
+  probability  Int @default(0) // 0-100
+  priority     Priority @default(MEDIUM)
+  
+  // Deal specific fields
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  description       String?
+  
+  isActive     Boolean @default(true)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  contact    Contact? @relation(fields: [contactId], references: [id])
+  company    Company? @relation(fields: [companyId], references: [id])
+  lead       Lead?    @relation(fields: [leadId], references: [id])
+  assignedTo User?    @relation("AssignedUser", fields: [assignedToId], references: [id])
+  createdBy  User     @relation("CreatedUser", fields: [createdById], references: [id])
+  
+  activities Activity[]
+  notes      Note[]
+
+  @@map("deals")
+}
+
+model Activity {
+  id           String @id @default(uuid())
+  type         ActivityType
+  subject      String @db.VarChar(255)
+  description  String?
+  scheduledAt  DateTime?
+  completedAt  DateTime?
+  status       ActivityStatus @default(SCHEDULED)
+  priority     Priority @default(MEDIUM)
+  
+  // Relations (polymorphic)
+  contactId    String?
+  companyId    String?
+  leadId       String?
+  dealId       String?
+  
+  assignedToId String?
+  createdById  String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  contact    Contact? @relation(fields: [contactId], references: [id])
+  company    Company? @relation(fields: [companyId], references: [id])
+  lead       Lead?    @relation(fields: [leadId], references: [id])
+  deal       Deal?    @relation(fields: [dealId], references: [id])
+  assignedTo User?    @relation(fields: [assignedToId], references: [id])
+  createdBy  User     @relation(fields: [createdById], references: [id])
+
+  @@map("activities")
+}
+
+model Note {
+  id          String @id @default(uuid())
+  content     String
+  isPrivate   Boolean @default(false)
+  
+  // Relations (polymorphic)
+  contactId   String?
+  companyId   String?
+  leadId      String?
+  dealId      String?
+  
+  createdById String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  company   Company? @relation(fields: [companyId], references: [id])
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+  deal      Deal?    @relation(fields: [dealId], references: [id])
+  createdBy User     @relation(fields: [createdById], references: [id])
+
+  @@map("notes")
+}
+
+// Enums
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+  QUALIFIED
+  UNQUALIFIED
+  CONVERTED
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+  CLIENT
+  FORMER_CLIENT
+}
+
+enum CompanySize {
+  STARTUP
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATING
+  CONVERTED
+  CLOSED_LOST
+}
+
+enum DealStage {
+  PROSPECTING
+  QUALIFICATION
+  NEEDS_ANALYSIS
+  VALUE_PROPOSITION
+  DECISION_MAKERS
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  NOTE
+  DEMO
+  FOLLOW_UP
+}
+
+enum ActivityStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}

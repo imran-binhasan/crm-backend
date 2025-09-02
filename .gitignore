@@ -2,6 +2,7 @@
 /dist
 /node_modules
 /build
+/example_temp
 
 # Logs
 logs
