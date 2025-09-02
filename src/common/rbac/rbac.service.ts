@@ -38,22 +38,46 @@ export class RbacService {
     permissionCheck: PermissionCheck,
     resourceData?: any
   ): Promise<boolean> {
-    const user = await this.getUserWithPermissions(userId);
-    if (!user) return false;
+    try {
+      if (!userId || !permissionCheck.resource || !permissionCheck.action) {
+        this.logger.warn('Invalid permission check parameters');
+        return false;
+      }
 
-    // Super admin check
-    if (await this.isSuperAdmin(user)) return true;
+      const user = await this.getUserWithPermissions(userId);
+      if (!user || !user.role) {
+        this.logger.warn(`User not found or has no role: ${userId}`);
+        return false;
+      }
 
-    // Check specific permission
-    const hasPermission = await this.checkUserPermission(user, permissionCheck);
-    if (!hasPermission) return false;
+      // Super admin check
+      if (await this.isSuperAdmin(user)) {
+        this.logger.debug(`Super admin access granted for user: ${userId}`);
+        return true;
+      }
 
-    // Apply conditional checks
-    if (permissionCheck.conditions && resourceData) {
-      return this.evaluateConditions(permissionCheck.conditions, resourceData, user);
+      // Check specific permission
+      const hasPermission = await this.checkUserPermission(user, permissionCheck);
+      if (!hasPermission) {
+        this.logger.debug(`Permission denied: ${userId} -> ${permissionCheck.resource}:${permissionCheck.action}`);
+        return false;
+      }
+
+      // Apply conditional checks
+      if (permissionCheck.conditions && resourceData) {
+        const conditionsPassed = this.evaluateConditions(permissionCheck.conditions, resourceData, user);
+        if (!conditionsPassed) {
+          this.logger.debug(`Conditional permission failed: ${userId}`);
+          return false;
+        }
+      }
+
+      this.logger.debug(`Permission granted: ${userId} -> ${permissionCheck.resource}:${permissionCheck.action}`);
+      return true;
+    } catch (error) {
+      this.logger.error(`Permission check failed: ${error.message}`, error.stack);
+      return false;
     }
-
-    return true;
   }
 
   /**
@@ -84,20 +108,39 @@ export class RbacService {
    * Get user permissions with caching
    */
   async getUserPermissions(userId: string): Promise<Permission[]> {
-    const user = await this.getUserWithPermissions(userId) as UserWithRole | null;
-    if (!user || !user.role) return [];
+    try {
+      // Check cache first
+      const cacheKey = `permissions:${userId}`;
+      if (this.permissionCache.has(cacheKey)) {
+        const cached = this.permissionCache.get(cacheKey);
+        if (cached) return cached;
+      }
 
-    const permissions: Permission[] = [];
-    
-    for (const rolePermission of user.role.permissions) {
-      const permission = rolePermission.permission;
-      permissions.push(new Permission(
-        permission.resource as ResourceType,
-        permission.action as ActionType
-      ));
+      const user = await this.getUserWithPermissions(userId) as UserWithRole | null;
+      if (!user || !user.role) {
+        this.logger.warn(`Cannot get permissions for user: ${userId}`);
+        return [];
+      }
+
+      const permissions: Permission[] = [];
+      
+      for (const rolePermission of user.role.permissions) {
+        const permission = rolePermission.permission;
+        permissions.push(new Permission(
+          permission.resource as ResourceType,
+          permission.action as ActionType
+        ));
+      }
+
+      // Cache the result
+      this.permissionCache.set(cacheKey, permissions);
+      setTimeout(() => this.permissionCache.delete(cacheKey), this.CACHE_TTL);
+
+      return permissions;
+    } catch (error) {
+      this.logger.error(`Failed to get user permissions: ${error.message}`);
+      return [];
     }
-
-    return permissions;
   }
 
   /**
