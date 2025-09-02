@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Permission, PermissionCheck, PermissionCondition, ResourceType, ActionType } from './permission.types';
 
@@ -24,6 +24,10 @@ type UserWithRole = {
 
 @Injectable()
 export class RbacService {
+  private readonly logger = new Logger(RbacService.name);
+  private readonly permissionCache = new Map<string, Permission[]>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -201,20 +205,25 @@ export class RbacService {
    * Get user with roles and permissions
    */
   private async getUserWithPermissions(userId: string) {
-    return this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        role: {
-          include: {
-            permissions: {
-              include: {
-                permission: true,
+    try {
+      return await this.prisma.user.findUnique({
+        where: { id: userId, isActive: true },
+        include: {
+          role: {
+            include: {
+              permissions: {
+                include: {
+                  permission: true,
+                },
               },
             },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      this.logger.error(`Failed to get user with permissions: ${error.message}`);
+      return null;
+    }
   }
 
   /**
