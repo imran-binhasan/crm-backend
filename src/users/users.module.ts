@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersResolver } from './users.resolver';
 import { PrismaModule } from '../common/prisma/prisma.module';
+import { RbacModule } from '../common/rbac/rbac.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, RbacModule],
   providers: [UsersService, UsersResolver],
   exports: [UsersService],
 })

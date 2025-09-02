@@ -10,6 +10,7 @@ import { PermissionsModule } from './permissions/permissions.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
+import { RbacModule } from './common/rbac/rbac.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { ConfigModule } from '@nestjs/config';
       context: ({ req }) => ({ req }),
     }),
     PrismaModule,
+    RbacModule,
     AuthModule,
     UsersModule,
     RolesModule,

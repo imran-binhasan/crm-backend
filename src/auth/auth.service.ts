@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { PrismaService } from '../common/prisma/prisma.service';
+import { RbacService } from '../common/rbac/rbac.service';
 import { LoginInput, RegisterInput } from './dto/auth.input';
 import { AuthResponse } from './dto/auth-response.dto';
 import * as bcrypt from 'bcrypt';
@@ -12,6 +13,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly rbacService: RbacService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -76,27 +78,15 @@ export class AuthService {
   }
 
   async hasPermissions(userId: string, permissions: string[]): Promise<boolean> {
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        role: {
-          include: {
-            permissions: {
-              include: {
-                permission: true
-              }
-            }
-          }
-        }
-      }
-    });
-
-    if (!user) return false;
-
-    const userPermissions = user.role.permissions.map(rp => 
-      `${rp.permission.resource}:${rp.permission.action}`
+    return this.rbacService.hasAllPermissions(
+      userId,
+      permissions.map(p => {
+        const [resource, action] = p.split(':');
+        return {
+          resource: resource as any,
+          action: action as any,
+        };
+      })
     );
-
-    return permissions.every(permission => userPermissions.includes(permission));
   }
 }
