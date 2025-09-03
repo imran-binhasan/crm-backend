@@ -8,181 +8,149 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
+import { BaseService } from '../common/services/base.service';
 import { CreateUserInput } from './dto/create-user.input';
 import { UpdateUserInput } from './dto/update-user.input';
+import { User } from './entities/user.entity';
+import { UserMapper } from './mappers/user.mapper';
 import { ResourceType, ActionType } from '../common/rbac/permission.types';
-import { SafeUser, UserWithRole } from '../common/interfaces/user.interface';
-import { User, Prisma } from '@prisma/client';
+import { PaginationOptions } from '../common/interfaces/base.interface';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
-export class UsersService {
-  private readonly logger = new Logger(UsersService.name);
+export class UsersService extends BaseService<User, CreateUserInput, UpdateUserInput> {
+  protected readonly resourceType = ResourceType.USER;
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly rbacService: RbacService,
-  ) {}
-
-  async create(data: CreateUserInput, currentUserId?: string): Promise<User> {
-    try {
-      // Check permissions if currentUserId is provided
-      if (currentUserId) {
-        const canCreate = await this.rbacService.hasPermission(currentUserId, {
-          resource: ResourceType.USER,
-          action: ActionType.CREATE,
-        });
-        if (!canCreate) {
-          throw new ForbiddenException(
-            'Insufficient permissions to create user',
-          );
-        }
-      }
-
-      // Validate input data
-      if (!data.email || !data.firstName || !data.lastName || !data.password) {
-        throw new BadRequestException('Required fields are missing');
-      }
-
-      // Check if user already exists
-      const existingUser = await this.prisma.user.findUnique({
-        where: { email: data.email },
-      });
-
-      if (existingUser) {
-        throw new ConflictException('User with this email already exists');
-      }
-
-      // Validate role exists
-      const roleExists = await this.prisma.role.findUnique({
-        where: { id: data.roleId },
-      });
-
-      if (!roleExists) {
-        throw new BadRequestException('Invalid role ID provided');
-      }
-
-      const hashedPassword = await bcrypt.hash(data.password, 12);
-
-      const user = await this.prisma.user.create({
-        data: {
-          ...data,
-          password: hashedPassword,
-        },
-        include: {
-          role: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-            },
-          },
-        },
-      });
-
-      this.logger.log(
-        `User created: ${user.email} by ${currentUserId || 'system'}`,
-      );
-      return user;
-    } catch (error) {
-      this.logger.error(`Failed to create user: ${error.message}`);
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ConflictException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-      throw new BadRequestException('Failed to create user');
-    }
+    prisma: PrismaService,
+    rbacService: RbacService,
+  ) {
+    super(prisma, rbacService, UsersService.name);
   }
 
-  async findAll(
-    currentUserId: string,
-    take?: number,
-    skip?: number,
-  ): Promise<SafeUser[]> {
-    try {
-      this.logger.log('Finding all users', { currentUserId, take, skip });
+  protected mapToDomain(prismaEntity: any): User | null {
+    return prismaEntity ? UserMapper.toDomain(prismaEntity) : null;
+  }
 
-      // Check if user has permission to read users
-      const hasPermission = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.USER, action: ActionType.READ },
-      );
+  protected async performCreate(data: CreateUserInput, currentUserId: string): Promise<User> {
+    // Validate input data
+    if (!data.email || !data.firstName || !data.lastName || !data.password) {
+      throw new BadRequestException('Required fields are missing');
+    }
 
-      if (!hasPermission) {
-        throw new ForbiddenException(
-          'Insufficient permissions to access users',
-        );
-      }
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: data.email },
+    });
 
-      // Get permission filters for user resource
-      const filters = await this.rbacService.getPermissionFilters(
-        currentUserId,
-        ResourceType.USER,
-      );
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
 
-      const users = await this.prisma.user.findMany({
-        where: {
-          deletedAt: null,
-          ...filters,
-        },
+    // Validate role exists
+    const roleExists = await this.prisma.role.findUnique({
+      where: { id: data.roleId },
+    });
+
+    if (!roleExists) {
+      throw new BadRequestException('Invalid role ID provided');
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
+    const userData = {
+      ...data,
+      password: hashedPassword,
+      isActive: data.isActive ?? true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const created = await this.prisma.user.create({
+      data: userData,
+      include: this.getIncludeRelations(),
+    });
+
+    return UserMapper.toDomain(created);
+  }
+
+  protected async performFindMany(options: any): Promise<User[]> {
+    const users = await this.prisma.user.findMany({
+      ...options,
+      include: this.getIncludeRelations(),
+    });
+
+    return UserMapper.toDomainArray(users);
+  }
+
+  protected async performFindUnique(id: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: this.getIncludeRelations(),
+    });
+
+    return user ? UserMapper.toDomain(user) : null;
+  }
+
+  protected async performUpdate(id: string, data: UpdateUserInput, currentUserId: string): Promise<User> {
+    const updateData = {
+      ...data,
+      updatedAt: new Date(),
+    };
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: updateData,
+      include: this.getIncludeRelations(),
+    });
+
+    return UserMapper.toDomain(updated);
+  }
+
+  protected async performSoftDelete(id: string, currentUserId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: {
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  protected async performHardDelete(id: string): Promise<void> {
+    await this.prisma.user.delete({ where: { id } });
+  }
+
+  protected async performCount(options: any): Promise<number> {
+    return this.prisma.user.count(options);
+  }
+
+  private getIncludeRelations() {
+    return {
+      role: {
         select: {
           id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          image: true,
+          name: true,
+          description: true,
           isActive: true,
           createdAt: true,
           updatedAt: true,
-          role: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-            },
-          },
+          deletedAt: true,
         },
-        take,
-        skip,
-        orderBy: { createdAt: 'desc' },
-      });
-
-      this.logger.log('Successfully retrieved users', { count: users.length });
-
-      // Transform to SafeUser format
-      return users.map((user) => ({
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        image: user.image,
-        isActive: user.isActive,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        role: user.role,
-      })) as SafeUser[];
-    } catch (error) {
-      this.logger.error('Error finding users', {
-        error: error.message,
-        currentUserId,
-      });
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new BadRequestException('Failed to retrieve users');
-    }
+      },
+    };
   }
 
-  async findOne(id: string, currentUserId?: string): Promise<User> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
-    if (!user) throw new NotFoundException('User not found');
+  // Additional business methods specific to users
+  async findByEmail(email: string, currentUserId?: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({ 
+      where: { email },
+      include: this.getIncludeRelations(),
+    });
+    
+    if (!user) return null;
 
-    // Check read permissions
+    // Check read permissions if currentUserId provided
     if (currentUserId) {
       const canRead = await this.rbacService.hasPermission(
         currentUserId,
@@ -196,82 +164,253 @@ export class UsersService {
       }
     }
 
-    return user;
+    return UserMapper.toDomain(user);
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    return this.prisma.user.findUnique({ where: { email } });
+  // Special method for authentication - returns user with password
+  async findByEmailForAuth(email: string): Promise<any> {
+    return this.prisma.user.findUnique({ 
+      where: { email },
+      include: this.getIncludeRelations(),
+    });
   }
 
-  async update(
-    id: string,
-    data: UpdateUserInput,
-    currentUserId?: string,
-  ): Promise<User> {
-    // Check if user exists
-    const existingUser = await this.prisma.user.findUnique({ where: { id } });
-    if (!existingUser) throw new NotFoundException('User not found');
-
-    // Check update permissions
-    if (currentUserId) {
-      const canUpdate = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.USER, action: ActionType.UPDATE },
-        existingUser,
-      );
-      if (!canUpdate) {
-        throw new ForbiddenException(
-          'Insufficient permissions to update this user',
-        );
-      }
+  // Method to create user without currentUserId (for registration)
+  async createForRegistration(data: CreateUserInput): Promise<User> {
+    // Validate input data
+    if (!data.email || !data.firstName || !data.lastName || !data.password) {
+      throw new BadRequestException('Required fields are missing');
     }
 
-    return this.prisma.user.update({ where: { id }, data });
-  }
+    // Check if user already exists
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: data.email },
+    });
 
-  async remove(id: string, currentUserId?: string): Promise<User> {
-    // Check if user exists
-    const existingUser = await this.prisma.user.findUnique({ where: { id } });
-    if (!existingUser) throw new NotFoundException('User not found');
-
-    // Check delete permissions
-    if (currentUserId) {
-      const canDelete = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.USER, action: ActionType.DELETE },
-        existingUser,
-      );
-      if (!canDelete) {
-        throw new ForbiddenException(
-          'Insufficient permissions to delete this user',
-        );
-      }
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
     }
 
-    return this.prisma.user.delete({ where: { id } });
+    // Validate role exists
+    const roleExists = await this.prisma.role.findUnique({
+      where: { id: data.roleId },
+    });
+
+    if (!roleExists) {
+      throw new BadRequestException('Invalid role ID provided');
+    }
+
+    const hashedPassword = await bcrypt.hash(data.password, 12);
+
+    const userData = {
+      ...data,
+      password: hashedPassword,
+      isActive: data.isActive ?? true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const created = await this.prisma.user.create({
+      data: userData,
+      include: this.getIncludeRelations(),
+    });
+
+    return UserMapper.toDomain(created);
+  }
+
+  // Method to find user for JWT validation
+  async findByIdForAuth(id: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: this.getIncludeRelations(),
+    });
+
+    return user ? UserMapper.toDomain(user) : null;
+  }
+
+  async findActiveUsers(
+    currentUserId: string,
+    pagination?: PaginationOptions,
+  ): Promise<User[]> {
+    await this.checkPermission(currentUserId, ActionType.READ);
+
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      ResourceType.USER,
+    );
+
+    const limit = pagination?.limit;
+    const skip = pagination?.page && pagination?.limit ? (pagination.page - 1) * pagination.limit : undefined;
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        isActive: true,
+        ...filters,
+      },
+      include: this.getIncludeRelations(),
+      take: limit,
+      skip,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return UserMapper.toDomainArray(users);
+  }
+
+  async getUsersByRole(
+    roleId: string,
+    currentUserId: string,
+    pagination?: PaginationOptions,
+  ): Promise<User[]> {
+    await this.checkPermission(currentUserId, ActionType.READ);
+
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      ResourceType.USER,
+    );
+
+    const limit = pagination?.limit;
+    const skip = pagination?.page && pagination?.limit ? (pagination.page - 1) * pagination.limit : undefined;
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        deletedAt: null,
+        roleId,
+        ...filters,
+      },
+      include: this.getIncludeRelations(),
+      take: limit,
+      skip,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return UserMapper.toDomainArray(users);
   }
 
   async assignRole(
     userId: string,
     roleId: string,
-    currentUserId?: string,
+    currentUserId: string,
   ): Promise<User> {
     // Check assign permissions
-    if (currentUserId) {
-      const canAssign = await this.rbacService.hasPermission(currentUserId, {
-        resource: ResourceType.USER,
-        action: ActionType.ASSIGN,
-      });
-      if (!canAssign) {
-        throw new ForbiddenException(
-          'Insufficient permissions to assign roles',
-        );
-      }
+    const canAssign = await this.rbacService.hasPermission(currentUserId, {
+      resource: ResourceType.USER,
+      action: ActionType.UPDATE,
+    });
+    if (!canAssign) {
+      throw new ForbiddenException(
+        'Insufficient permissions to assign roles',
+      );
     }
 
-    // For now, let's use a raw query approach
-    return this.prisma.$queryRaw`
-      UPDATE users SET "roleId" = ${roleId} WHERE id = ${userId} RETURNING *
-    ` as any;
+    // Validate role exists
+    const roleExists = await this.prisma.role.findUnique({
+      where: { id: roleId },
+    });
+
+    if (!roleExists) {
+      throw new BadRequestException('Invalid role ID provided');
+    }
+
+    // Update user role
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        roleId,
+        updatedAt: new Date(),
+      },
+      include: this.getIncludeRelations(),
+    });
+
+    this.logger.log(
+      `Role ${roleId} assigned to user ${userId} by ${currentUserId}`,
+    );
+
+    return UserMapper.toDomain(updatedUser);
+  }
+
+  async toggleUserStatus(
+    userId: string,
+    currentUserId: string,
+  ): Promise<User> {
+    const existingUser = await this.findOne(userId, currentUserId);
+    
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        isActive: !existingUser.isActive,
+        updatedAt: new Date(),
+      },
+      include: this.getIncludeRelations(),
+    });
+
+    this.logger.log(
+      `User ${userId} status toggled to ${updatedUser.isActive} by ${currentUserId}`,
+    );
+
+    return UserMapper.toDomain(updatedUser);
+  }
+
+  async changePassword(
+    userId: string,
+    newPassword: string,
+    currentUserId: string,
+  ): Promise<boolean> {
+    // Check if user can update this user
+    await this.findOne(userId, currentUserId);
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { 
+        password: hashedPassword,
+        updatedAt: new Date(),
+      },
+    });
+
+    this.logger.log(
+      `Password changed for user ${userId} by ${currentUserId}`,
+    );
+
+    return true;
+  }
+
+  async getUserWithFullProfile(
+    userId: string,
+    currentUserId: string,
+  ): Promise<User> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Check read permissions
+    const canRead = await this.rbacService.hasPermission(
+      currentUserId,
+      { resource: ResourceType.USER, action: ActionType.READ },
+      user,
+    );
+    if (!canRead) {
+      throw new ForbiddenException(
+        'Insufficient permissions to view this user profile',
+      );
+    }
+
+    return UserMapper.toDomain(user);
   }
 }

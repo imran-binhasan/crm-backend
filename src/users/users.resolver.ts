@@ -1,4 +1,4 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from './entities/user.entity';
@@ -11,66 +11,126 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ResourceType, ActionType } from '../common/rbac/permission.types';
 
 @Resolver(() => User)
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PermissionGuard)
 export class UsersResolver {
   constructor(private readonly usersService: UsersService) {}
 
-  @Query(() => [User], { name: 'users' })
-  @UseGuards(PermissionGuard)
+  @Mutation(() => User)
+  @RequireResource(ResourceType.USER, ActionType.CREATE)
+  async createUser(
+    @Args('createUserInput') createUserInput: CreateUserInput,
+    @CurrentUser() user: User,
+  ): Promise<User> {
+    return this.usersService.create(createUserInput, user.id);
+  }
+
+  @Query(() => String, { name: 'users' })
   @RequireResource(ResourceType.USER, ActionType.READ)
-  findAll(@CurrentUser() currentUser: User) {
-    return this.usersService.findAll(currentUser.id);
+  async findAll(
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
+  ): Promise<string> {
+    const pagination = take ? { page: Math.floor((skip || 0) / take) + 1, limit: take } : undefined;
+    const result = await this.usersService.findAll(user!.id, pagination);
+    return JSON.stringify(result);
   }
 
   @Query(() => User, { name: 'user' })
-  @UseGuards(PermissionGuard)
   @RequireResource(ResourceType.USER, ActionType.READ)
-  findOne(
+  async findOne(
     @Args('id', { type: () => ID }) id: string,
-    @CurrentUser() currentUser: User,
-  ) {
-    return this.usersService.findOne(id, currentUser.id);
+    @CurrentUser() user: User,
+  ): Promise<User> {
+    return this.usersService.findOne(id, user.id);
+  }
+
+  @Query(() => User, { name: 'userByEmail', nullable: true })
+  @RequireResource(ResourceType.USER, ActionType.READ)
+  async findByEmail(
+    @Args('email') email: string,
+    @CurrentUser() user: User,
+  ): Promise<User | null> {
+    return this.usersService.findByEmail(email, user.id);
+  }
+
+  @Query(() => [User], { name: 'activeUsers' })
+  @RequireResource(ResourceType.USER, ActionType.READ)
+  async findActiveUsers(
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
+  ): Promise<User[]> {
+    const pagination = take ? { page: Math.floor((skip || 0) / take) + 1, limit: take } : undefined;
+    return this.usersService.findActiveUsers(user!.id, pagination);
+  }
+
+  @Query(() => [User], { name: 'usersByRole' })
+  @RequireResource(ResourceType.USER, ActionType.READ)
+  async getUsersByRole(
+    @Args('roleId', { type: () => ID }) roleId: string,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
+  ): Promise<User[]> {
+    const pagination = take ? { page: Math.floor((skip || 0) / take) + 1, limit: take } : undefined;
+    return this.usersService.getUsersByRole(roleId, user!.id, pagination);
+  }
+
+  @Query(() => User, { name: 'userProfile' })
+  @RequireResource(ResourceType.USER, ActionType.READ)
+  async getUserWithFullProfile(
+    @Args('userId', { type: () => ID }) userId: string,
+    @CurrentUser() user: User,
+  ): Promise<User> {
+    return this.usersService.getUserWithFullProfile(userId, user.id);
   }
 
   @Mutation(() => User)
-  @UseGuards(PermissionGuard)
-  @RequireResource(ResourceType.USER, ActionType.CREATE)
-  createUser(
-    @Args('createUserInput') createUserInput: CreateUserInput,
-    @CurrentUser() currentUser: User,
-  ) {
-    return this.usersService.create(createUserInput, currentUser.id);
-  }
-
-  @Mutation(() => User)
-  @UseGuards(PermissionGuard)
   @RequireResource(ResourceType.USER, ActionType.UPDATE)
-  updateUser(
-    @Args('id', { type: () => ID }) id: string,
+  async updateUser(
     @Args('updateUserInput') updateUserInput: UpdateUserInput,
-    @CurrentUser() currentUser: User,
-  ) {
-    return this.usersService.update(id, updateUserInput, currentUser.id);
+    @CurrentUser() user: User,
+  ): Promise<User> {
+    return this.usersService.update(updateUserInput.id, updateUserInput, user.id);
   }
 
   @Mutation(() => User)
-  @UseGuards(PermissionGuard)
-  @RequireResource(ResourceType.USER, ActionType.DELETE)
-  removeUser(
-    @Args('id', { type: () => ID }) id: string,
-    @CurrentUser() currentUser: User,
-  ) {
-    return this.usersService.remove(id, currentUser.id);
-  }
-
-  @Mutation(() => User)
-  @UseGuards(PermissionGuard)
-  @RequireResource(ResourceType.USER, ActionType.ASSIGN)
-  assignRole(
+  @RequireResource(ResourceType.USER, ActionType.UPDATE)
+  async assignRole(
     @Args('userId', { type: () => ID }) userId: string,
     @Args('roleId', { type: () => ID }) roleId: string,
-    @CurrentUser() currentUser: User,
-  ) {
-    return this.usersService.assignRole(userId, roleId, currentUser.id);
+    @CurrentUser() user: User,
+  ): Promise<User> {
+    return this.usersService.assignRole(userId, roleId, user.id);
+  }
+
+  @Mutation(() => User)
+  @RequireResource(ResourceType.USER, ActionType.UPDATE)
+  async toggleUserStatus(
+    @Args('userId', { type: () => ID }) userId: string,
+    @CurrentUser() user: User,
+  ): Promise<User> {
+    return this.usersService.toggleUserStatus(userId, user.id);
+  }
+
+  @Mutation(() => Boolean)
+  @RequireResource(ResourceType.USER, ActionType.UPDATE)
+  async changePassword(
+    @Args('userId', { type: () => ID }) userId: string,
+    @Args('newPassword') newPassword: string,
+    @CurrentUser() user: User,
+  ): Promise<boolean> {
+    return this.usersService.changePassword(userId, newPassword, user.id);
+  }
+
+  @Mutation(() => Boolean)
+  @RequireResource(ResourceType.USER, ActionType.DELETE)
+  async removeUser(
+    @Args('id', { type: () => ID }) id: string,
+    @CurrentUser() user: User,
+  ): Promise<boolean> {
+    await this.usersService.remove(id, user.id);
+    return true;
   }
 }
