@@ -100,7 +100,7 @@ export class InvoicesResolver {
     @Args('paymentDate', { type: () => Date, nullable: true }) paymentDate?: Date,
     @CurrentUser() user?: User,
   ): Promise<Invoice> {
-    return this.invoicesService.markAsPaid(invoiceId, paidAmount, user.id, paymentDate);
+    return this.invoicesService.markAsPaid(invoiceId, paidAmount, user!.id, paymentDate);
   }
 
   @Mutation(() => Invoice)
@@ -112,7 +112,7 @@ export class InvoicesResolver {
     @Args('notes', { type: () => String, nullable: true }) notes?: string,
     @CurrentUser() user?: User,
   ): Promise<Invoice> {
-    return this.invoicesService.addPayment(invoiceId, amount, user.id, { paymentMethod, notes });
+    return this.invoicesService.addPayment(invoiceId, amount, user!.id, { paymentMethod, notes });
   }
 
   @Mutation(() => Invoice)

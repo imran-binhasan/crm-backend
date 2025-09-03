@@ -63,7 +63,7 @@ export class ReportsResolver {
     @CurrentUser() user?: User,
   ): Promise<Report> {
     const params = parameters ? JSON.parse(parameters) : {};
-    return this.reportsService.generateReport(reportId, user.id, params);
+    return this.reportsService.generateReport(reportId, user!.id, params);
   }
 
   @Query(() => String, { name: 'executeReport' })
@@ -75,7 +75,7 @@ export class ReportsResolver {
     @CurrentUser() user?: User,
   ): Promise<string> {
     const params = parameters ? JSON.parse(parameters) : {};
-    return this.reportsService.executeReport(reportId, user.id, format, params);
+    return this.reportsService.executeReport(reportId, user!.id, format, params);
   }
 
   @Query(() => [Report], { name: 'salesReports' })
@@ -85,7 +85,7 @@ export class ReportsResolver {
     @Args('endDate', { type: () => Date, nullable: true }) endDate?: Date,
     @CurrentUser() user?: User,
   ): Promise<Report[]> {
-    return this.reportsService.getSalesReports(user.id, { startDate, endDate });
+    return this.reportsService.getSalesReports(user!.id, { startDate, endDate });
   }
 
   @Query(() => [Report], { name: 'projectReports' })
@@ -94,7 +94,7 @@ export class ReportsResolver {
     @Args('projectId', { type: () => ID, nullable: true }) projectId?: string,
     @CurrentUser() user?: User,
   ): Promise<Report[]> {
-    return this.reportsService.getProjectReports(user.id, projectId);
+    return this.reportsService.getProjectReports(user!.id, projectId);
   }
 
   @Query(() => [Report], { name: 'financialReports' })

@@ -1,5 +1,6 @@
 import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
 import { User } from '../../users/entities/user.entity';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @ObjectType()
 export class Employee {
@@ -16,31 +17,31 @@ export class Employee {
   lastName: string;
 
   @Field(() => String, { nullable: true })
-  email?: string;
+  email?: string | null;
 
   @Field(() => String, { nullable: true })
-  phone?: string;
+  phone?: string | null;
 
   @Field(() => String, { nullable: true })
-  personalEmail?: string;
+  personalEmail?: string | null;
 
   @Field(() => Date, { nullable: true })
-  dateOfBirth?: Date;
+  dateOfBirth?: Date | null;
 
   @Field(() => String, { nullable: true })
-  gender?: string;
+  gender?: string | null;
 
   @Field(() => String, { nullable: true })
-  maritalStatus?: string;
+  maritalStatus?: string | null;
 
   @Field(() => String, { nullable: true })
-  address?: string;
+  address?: string | null;
 
   @Field(() => String, { nullable: true })
-  emergencyContact?: string;
+  emergencyContact?: string | null;
 
   @Field(() => String, { nullable: true })
-  emergencyPhone?: string;
+  emergencyPhone?: string | null;
 
   // Employment details
   @Field(() => String)
@@ -59,35 +60,35 @@ export class Employee {
   hireDate: Date;
 
   @Field(() => Date, { nullable: true })
-  terminationDate?: Date;
+  terminationDate?: Date | null;
 
   @Field(() => Float, { nullable: true })
-  salary?: number;
+  salary?: Decimal | null;
 
   @Field(() => String, { nullable: true })
-  salaryType?: string; // HOURLY, MONTHLY, YEARLY
+  salaryType?: string | null; // HOURLY, MONTHLY, YEARLY
 
   @Field(() => String, { nullable: true })
-  workLocation?: string; // OFFICE, REMOTE, HYBRID
+  workLocation?: string | null; // OFFICE, REMOTE, HYBRID
 
   @Field(() => Number, { defaultValue: 40 })
   weeklyHours: number;
 
   // Relations
   @Field(() => String, { nullable: true })
-  managerId?: string;
+  managerId?: string | null;
 
   @Field(() => Employee, { nullable: true })
-  manager?: Employee;
+  manager?: Employee | null;
 
-  @Field(() => [Employee])
-  directReports: Employee[];
+  @Field(() => [Employee], { nullable: true })
+  directReports?: Employee[] | null;
 
   @Field(() => String, { nullable: true })
-  userId?: string;
+  userId?: string | null;
 
   @Field(() => User, { nullable: true })
-  user?: User;
+  user?: User | null;
 
   // System fields
   @Field(() => String)
@@ -103,5 +104,5 @@ export class Employee {
   updatedAt: Date;
 
   @Field(() => Date, { nullable: true })
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 }
