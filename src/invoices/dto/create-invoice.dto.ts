@@ -1,5 +1,12 @@
 import { InputType, Field } from '@nestjs/graphql';
-import { IsString, IsOptional, IsNumber, IsDateString, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsDateString,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 @InputType()

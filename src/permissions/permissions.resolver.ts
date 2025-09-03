@@ -19,7 +19,9 @@ export class PermissionsResolver {
   }
 
   @Mutation(() => Permission)
-  createPermission(@Args('createPermissionInput') createPermissionInput: CreatePermissionInput) {
+  createPermission(
+    @Args('createPermissionInput') createPermissionInput: CreatePermissionInput,
+  ) {
     return this.permissionsService.create(createPermissionInput);
   }
 

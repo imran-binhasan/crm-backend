@@ -47,16 +47,20 @@ export class Permission {
   constructor(
     public resource: ResourceType,
     public action: ActionType,
-    public conditions?: PermissionCondition[]
+    public conditions?: PermissionCondition[],
   ) {}
 
-  static create(resource: ResourceType, action: ActionType, conditions?: PermissionCondition[]): Permission {
+  static create(
+    resource: ResourceType,
+    action: ActionType,
+    conditions?: PermissionCondition[],
+  ): Permission {
     return new Permission(resource, action, conditions);
   }
 
   toString(): string {
-    const conditionStr = this.conditions?.length 
-      ? `:${this.conditions.map(c => `${c.field}${c.operator}${c.value}`).join(',')}`
+    const conditionStr = this.conditions?.length
+      ? `:${this.conditions.map((c) => `${c.field}${c.operator}${c.value}`).join(',')}`
       : '';
     return `${this.resource}:${this.action}${conditionStr}`;
   }

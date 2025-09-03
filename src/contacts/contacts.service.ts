@@ -1,9 +1,9 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ForbiddenException, 
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
   BadRequestException,
-  Logger 
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
@@ -21,17 +21,25 @@ export class ContactsService {
     private readonly rbacService: RbacService,
   ) {}
 
-  async create(data: CreateContactInput, currentUserId: string): Promise<Contact> {
+  async create(
+    data: CreateContactInput,
+    currentUserId: string,
+  ): Promise<Contact> {
     try {
-      this.logger.log('Creating contact', { currentUserId, data: { firstName: data.firstName, lastName: data.lastName } });
+      this.logger.log('Creating contact', {
+        currentUserId,
+        data: { firstName: data.firstName, lastName: data.lastName },
+      });
 
       // Check permissions
-      const canCreate = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.CONTACT, action: ActionType.CREATE }
-      );
+      const canCreate = await this.rbacService.hasPermission(currentUserId, {
+        resource: ResourceType.CONTACT,
+        action: ActionType.CREATE,
+      });
       if (!canCreate) {
-        throw new ForbiddenException('Insufficient permissions to create contact');
+        throw new ForbiddenException(
+          'Insufficient permissions to create contact',
+        );
       }
 
       // Validate input
@@ -42,7 +50,7 @@ export class ContactsService {
       // Check if company exists (if provided)
       if (data.companyId) {
         const companyExists = await this.prisma.company.findUnique({
-          where: { id: data.companyId, deletedAt: null }
+          where: { id: data.companyId, deletedAt: null },
         });
         if (!companyExists) {
           throw new BadRequestException('Invalid company ID provided');
@@ -52,7 +60,7 @@ export class ContactsService {
       // Check if assigned user exists (if provided)
       if (data.assignedToId) {
         const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true }
+          where: { id: data.assignedToId, isActive: true },
         });
         if (!userExists) {
           throw new BadRequestException('Invalid assigned user ID provided');
@@ -73,7 +81,7 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -81,17 +89,21 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
-      this.logger.log(`Contact created: ${contact.firstName} ${contact.lastName}`);
+      this.logger.log(
+        `Contact created: ${contact.firstName} ${contact.lastName}`,
+      );
       return contact;
-
     } catch (error) {
       this.logger.error(`Failed to create contact: ${error.message}`);
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create contact');
@@ -109,17 +121,19 @@ export class ContactsService {
       // Check permissions
       const hasPermission = await this.rbacService.hasPermission(
         currentUserId,
-        { resource: ResourceType.CONTACT, action: ActionType.READ }
+        { resource: ResourceType.CONTACT, action: ActionType.READ },
       );
 
       if (!hasPermission) {
-        throw new ForbiddenException('Insufficient permissions to access contacts');
+        throw new ForbiddenException(
+          'Insufficient permissions to access contacts',
+        );
       }
 
       // Get permission filters
       const filters = await this.rbacService.getPermissionFilters(
         currentUserId,
-        ResourceType.CONTACT
+        ResourceType.CONTACT,
       );
 
       const contacts = await this.prisma.contact.findMany({
@@ -132,7 +146,7 @@ export class ContactsService {
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           assignedTo: {
             select: {
@@ -140,7 +154,7 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -148,19 +162,23 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
+            },
+          },
         },
         take,
         skip,
         orderBy: { createdAt: 'desc' },
       });
 
-      this.logger.log('Successfully retrieved contacts', { count: contacts.length });
+      this.logger.log('Successfully retrieved contacts', {
+        count: contacts.length,
+      });
       return contacts;
-
     } catch (error) {
-      this.logger.error('Error finding contacts', { error: error.message, currentUserId });
+      this.logger.error('Error finding contacts', {
+        error: error.message,
+        currentUserId,
+      });
       if (error instanceof ForbiddenException) {
         throw error;
       }
@@ -180,7 +198,7 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -188,9 +206,9 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       if (!contact) {
@@ -201,29 +219,37 @@ export class ContactsService {
       const canRead = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.CONTACT, action: ActionType.READ },
-        contact
+        contact,
       );
 
       if (!canRead) {
-        throw new ForbiddenException('Insufficient permissions to view this contact');
+        throw new ForbiddenException(
+          'Insufficient permissions to view this contact',
+        );
       }
 
       return contact;
-
     } catch (error) {
       this.logger.error(`Failed to find contact: ${error.message}`);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to retrieve contact');
     }
   }
 
-  async update(id: string, data: UpdateContactInput, currentUserId: string): Promise<Contact> {
+  async update(
+    id: string,
+    data: UpdateContactInput,
+    currentUserId: string,
+  ): Promise<Contact> {
     try {
       // Check if contact exists
       const existingContact = await this.prisma.contact.findUnique({
-        where: { id, deletedAt: null }
+        where: { id, deletedAt: null },
       });
 
       if (!existingContact) {
@@ -234,17 +260,19 @@ export class ContactsService {
       const canUpdate = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.CONTACT, action: ActionType.UPDATE },
-        existingContact
+        existingContact,
       );
 
       if (!canUpdate) {
-        throw new ForbiddenException('Insufficient permissions to update this contact');
+        throw new ForbiddenException(
+          'Insufficient permissions to update this contact',
+        );
       }
 
       // Validate company if provided
       if (data.companyId && data.companyId !== existingContact.companyId) {
         const companyExists = await this.prisma.company.findUnique({
-          where: { id: data.companyId, deletedAt: null }
+          where: { id: data.companyId, deletedAt: null },
         });
         if (!companyExists) {
           throw new BadRequestException('Invalid company ID provided');
@@ -252,9 +280,12 @@ export class ContactsService {
       }
 
       // Validate assigned user if provided
-      if (data.assignedToId && data.assignedToId !== existingContact.assignedToId) {
+      if (
+        data.assignedToId &&
+        data.assignedToId !== existingContact.assignedToId
+      ) {
         const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true }
+          where: { id: data.assignedToId, isActive: true },
         });
         if (!userExists) {
           throw new BadRequestException('Invalid assigned user ID provided');
@@ -274,7 +305,7 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -282,17 +313,22 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
-      this.logger.log(`Contact updated: ${contact.firstName} ${contact.lastName}`);
+      this.logger.log(
+        `Contact updated: ${contact.firstName} ${contact.lastName}`,
+      );
       return contact;
-
     } catch (error) {
       this.logger.error(`Failed to update contact: ${error.message}`);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to update contact');
@@ -303,7 +339,7 @@ export class ContactsService {
     try {
       // Check if contact exists
       const existingContact = await this.prisma.contact.findUnique({
-        where: { id, deletedAt: null }
+        where: { id, deletedAt: null },
       });
 
       if (!existingContact) {
@@ -314,11 +350,13 @@ export class ContactsService {
       const canDelete = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.CONTACT, action: ActionType.DELETE },
-        existingContact
+        existingContact,
       );
 
       if (!canDelete) {
-        throw new ForbiddenException('Insufficient permissions to delete this contact');
+        throw new ForbiddenException(
+          'Insufficient permissions to delete this contact',
+        );
       }
 
       // Soft delete
@@ -333,7 +371,7 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -341,28 +379,36 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
-      this.logger.log(`Contact deleted: ${contact.firstName} ${contact.lastName}`);
+      this.logger.log(
+        `Contact deleted: ${contact.firstName} ${contact.lastName}`,
+      );
       return contact;
-
     } catch (error) {
       this.logger.error(`Failed to delete contact: ${error.message}`);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to delete contact');
     }
   }
 
-  async assignToUser(contactId: string, userId: string, currentUserId: string): Promise<Contact> {
+  async assignToUser(
+    contactId: string,
+    userId: string,
+    currentUserId: string,
+  ): Promise<Contact> {
     try {
       // Check if contact exists
       const existingContact = await this.prisma.contact.findUnique({
-        where: { id: contactId, deletedAt: null }
+        where: { id: contactId, deletedAt: null },
       });
 
       if (!existingContact) {
@@ -370,18 +416,20 @@ export class ContactsService {
       }
 
       // Check permissions
-      const canAssign = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.CONTACT, action: ActionType.ASSIGN }
-      );
+      const canAssign = await this.rbacService.hasPermission(currentUserId, {
+        resource: ResourceType.CONTACT,
+        action: ActionType.ASSIGN,
+      });
 
       if (!canAssign) {
-        throw new ForbiddenException('Insufficient permissions to assign contacts');
+        throw new ForbiddenException(
+          'Insufficient permissions to assign contacts',
+        );
       }
 
       // Check if user exists
       const userExists = await this.prisma.user.findUnique({
-        where: { id: userId, isActive: true }
+        where: { id: userId, isActive: true },
       });
 
       if (!userExists) {
@@ -399,7 +447,7 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -407,17 +455,22 @@ export class ContactsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
-      this.logger.log(`Contact assigned: ${contact.firstName} ${contact.lastName} to ${userExists.firstName} ${userExists.lastName}`);
+      this.logger.log(
+        `Contact assigned: ${contact.firstName} ${contact.lastName} to ${userExists.firstName} ${userExists.lastName}`,
+      );
       return contact;
-
     } catch (error) {
       this.logger.error(`Failed to assign contact: ${error.message}`);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException || error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to assign contact');

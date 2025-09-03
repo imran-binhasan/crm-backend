@@ -1,6 +1,16 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Permission, PermissionCheck, PermissionCondition, ResourceType, ActionType } from './permission.types';
+import {
+  Permission,
+  PermissionCheck,
+  PermissionCondition,
+  ResourceType,
+  ActionType,
+} from './permission.types';
 
 type UserWithRole = {
   id: string;
@@ -34,9 +44,9 @@ export class RbacService {
    * Check if user has permission for a specific resource and action
    */
   async hasPermission(
-    userId: string, 
+    userId: string,
     permissionCheck: PermissionCheck,
-    resourceData?: any
+    resourceData?: any,
   ): Promise<boolean> {
     try {
       if (!userId || !permissionCheck.resource || !permissionCheck.action) {
@@ -57,25 +67,39 @@ export class RbacService {
       }
 
       // Check specific permission
-      const hasPermission = await this.checkUserPermission(user, permissionCheck);
+      const hasPermission = await this.checkUserPermission(
+        user,
+        permissionCheck,
+      );
       if (!hasPermission) {
-        this.logger.debug(`Permission denied: ${userId} -> ${permissionCheck.resource}:${permissionCheck.action}`);
+        this.logger.debug(
+          `Permission denied: ${userId} -> ${permissionCheck.resource}:${permissionCheck.action}`,
+        );
         return false;
       }
 
       // Apply conditional checks
       if (permissionCheck.conditions && resourceData) {
-        const conditionsPassed = this.evaluateConditions(permissionCheck.conditions, resourceData, user);
+        const conditionsPassed = this.evaluateConditions(
+          permissionCheck.conditions,
+          resourceData,
+          user,
+        );
         if (!conditionsPassed) {
           this.logger.debug(`Conditional permission failed: ${userId}`);
           return false;
         }
       }
 
-      this.logger.debug(`Permission granted: ${userId} -> ${permissionCheck.resource}:${permissionCheck.action}`);
+      this.logger.debug(
+        `Permission granted: ${userId} -> ${permissionCheck.resource}:${permissionCheck.action}`,
+      );
       return true;
     } catch (error) {
-      this.logger.error(`Permission check failed: ${error.message}`, error.stack);
+      this.logger.error(
+        `Permission check failed: ${error.message}`,
+        error.stack,
+      );
       return false;
     }
   }
@@ -83,7 +107,10 @@ export class RbacService {
   /**
    * Check multiple permissions (OR logic)
    */
-  async hasAnyPermission(userId: string, permissions: PermissionCheck[]): Promise<boolean> {
+  async hasAnyPermission(
+    userId: string,
+    permissions: PermissionCheck[],
+  ): Promise<boolean> {
     for (const permission of permissions) {
       if (await this.hasPermission(userId, permission)) {
         return true;
@@ -95,7 +122,10 @@ export class RbacService {
   /**
    * Check multiple permissions (AND logic)
    */
-  async hasAllPermissions(userId: string, permissions: PermissionCheck[]): Promise<boolean> {
+  async hasAllPermissions(
+    userId: string,
+    permissions: PermissionCheck[],
+  ): Promise<boolean> {
     for (const permission of permissions) {
       if (!(await this.hasPermission(userId, permission))) {
         return false;
@@ -116,20 +146,24 @@ export class RbacService {
         if (cached) return cached;
       }
 
-      const user = await this.getUserWithPermissions(userId) as UserWithRole | null;
+      const user = (await this.getUserWithPermissions(
+        userId,
+      )) as UserWithRole | null;
       if (!user || !user.role) {
         this.logger.warn(`Cannot get permissions for user: ${userId}`);
         return [];
       }
 
       const permissions: Permission[] = [];
-      
+
       for (const rolePermission of user.role.permissions) {
         const permission = rolePermission.permission;
-        permissions.push(new Permission(
-          permission.resource as ResourceType,
-          permission.action as ActionType
-        ));
+        permissions.push(
+          new Permission(
+            permission.resource as ResourceType,
+            permission.action as ActionType,
+          ),
+        );
       }
 
       // Cache the result
@@ -151,7 +185,7 @@ export class RbacService {
     resources: T[],
     resourceType: ResourceType,
     action: ActionType,
-    getResourceId: (resource: T) => string
+    getResourceId: (resource: T) => string,
   ): Promise<T[]> {
     const user = await this.getUserWithPermissions(userId);
     if (!user) return [];
@@ -161,10 +195,14 @@ export class RbacService {
     const filteredResources: T[] = [];
 
     for (const resource of resources) {
-      const canAccess = await this.hasPermission(userId, {
-        resource: resourceType,
-        action,
-      }, { id: getResourceId(resource) });
+      const canAccess = await this.hasPermission(
+        userId,
+        {
+          resource: resourceType,
+          action,
+        },
+        { id: getResourceId(resource) },
+      );
 
       if (canAccess) {
         filteredResources.push(resource);
@@ -177,31 +215,35 @@ export class RbacService {
   /**
    * Get filtered query conditions based on user permissions
    */
-  async getPermissionFilters(userId: string, resource: ResourceType): Promise<any> {
-    const user = await this.getUserWithPermissions(userId) as UserWithRole | null;
+  async getPermissionFilters(
+    userId: string,
+    resource: ResourceType,
+  ): Promise<any> {
+    const user = (await this.getUserWithPermissions(
+      userId,
+    )) as UserWithRole | null;
     if (!user) return { id: 'impossible' }; // Return impossible condition
 
     if (await this.isSuperAdmin(user)) return {}; // No restrictions
 
     // Check for ownership-based permissions
-    const ownershipPermission = user.role.permissions.find(rp => 
-      rp.permission.resource === resource && 
-      rp.permission.description?.includes('own')
+    const ownershipPermission = user.role.permissions.find(
+      (rp) =>
+        rp.permission.resource === resource &&
+        rp.permission.description?.includes('own'),
     );
 
     if (ownershipPermission) {
       return {
-        OR: [
-          { createdById: userId },
-          { assignedToId: userId },
-        ]
+        OR: [{ createdById: userId }, { assignedToId: userId }],
       };
     }
 
     // Check for team-based permissions
-    const teamPermission = user.role.permissions.find(rp => 
-      rp.permission.resource === resource && 
-      rp.permission.description?.includes('team')
+    const teamPermission = user.role.permissions.find(
+      (rp) =>
+        rp.permission.resource === resource &&
+        rp.permission.description?.includes('team'),
     );
 
     if (teamPermission) {
@@ -211,7 +253,7 @@ export class RbacService {
         OR: [
           { createdById: { in: teamMembers } },
           { assignedToId: { in: teamMembers } },
-        ]
+        ],
       };
     }
 
@@ -221,7 +263,10 @@ export class RbacService {
   /**
    * Assign permission to role
    */
-  async assignPermissionToRole(roleId: string, permissionId: string): Promise<void> {
+  async assignPermissionToRole(
+    roleId: string,
+    permissionId: string,
+  ): Promise<void> {
     await this.prisma.rolePermission.create({
       data: {
         roleId,
@@ -233,7 +278,10 @@ export class RbacService {
   /**
    * Remove permission from role
    */
-  async removePermissionFromRole(roleId: string, permissionId: string): Promise<void> {
+  async removePermissionFromRole(
+    roleId: string,
+    permissionId: string,
+  ): Promise<void> {
     await this.prisma.rolePermission.delete({
       where: {
         roleId_permissionId: {
@@ -264,7 +312,9 @@ export class RbacService {
         },
       });
     } catch (error) {
-      this.logger.error(`Failed to get user with permissions: ${error.message}`);
+      this.logger.error(
+        `Failed to get user with permissions: ${error.message}`,
+      );
       return null;
     }
   }
@@ -273,28 +323,35 @@ export class RbacService {
    * Check if user is super admin
    */
   private async isSuperAdmin(user: any): Promise<boolean> {
-    return user.role.name === 'Super Admin' || user.role.name === 'System Admin';
+    return (
+      user.role.name === 'Super Admin' || user.role.name === 'System Admin'
+    );
   }
 
   /**
    * Check specific user permission
    */
-  private async checkUserPermission(user: any, permissionCheck: PermissionCheck): Promise<boolean> {
-    const userPermissions = user.role.permissions.map(rp => ({
+  private async checkUserPermission(
+    user: any,
+    permissionCheck: PermissionCheck,
+  ): Promise<boolean> {
+    const userPermissions = user.role.permissions.map((rp) => ({
       resource: rp.permission.resource,
       action: rp.permission.action,
     }));
 
     // Check for exact match
-    const exactMatch = userPermissions.some(p => 
-      p.resource === permissionCheck.resource && p.action === permissionCheck.action
+    const exactMatch = userPermissions.some(
+      (p) =>
+        p.resource === permissionCheck.resource &&
+        p.action === permissionCheck.action,
     );
 
     if (exactMatch) return true;
 
     // Check for wildcard permissions (manage = all actions)
-    const managePermission = userPermissions.some(p => 
-      p.resource === permissionCheck.resource && p.action === 'manage'
+    const managePermission = userPermissions.some(
+      (p) => p.resource === permissionCheck.resource && p.action === 'manage',
     );
 
     return managePermission;
@@ -304,24 +361,33 @@ export class RbacService {
    * Evaluate conditional permissions
    */
   private evaluateConditions(
-    conditions: PermissionCondition[], 
-    resourceData: any, 
-    user: any
+    conditions: PermissionCondition[],
+    resourceData: any,
+    user: any,
   ): boolean {
-    return conditions.every(condition => {
+    return conditions.every((condition) => {
       const fieldValue = this.getNestedValue(resourceData, condition.field);
-      
+
       switch (condition.operator) {
         case 'eq':
           return fieldValue === condition.value;
         case 'ne':
           return fieldValue !== condition.value;
         case 'in':
-          return Array.isArray(condition.value) && condition.value.includes(fieldValue);
+          return (
+            Array.isArray(condition.value) &&
+            condition.value.includes(fieldValue)
+          );
         case 'nin':
-          return Array.isArray(condition.value) && !condition.value.includes(fieldValue);
+          return (
+            Array.isArray(condition.value) &&
+            !condition.value.includes(fieldValue)
+          );
         case 'own':
-          return resourceData.createdById === user.id || resourceData.assignedToId === user.id;
+          return (
+            resourceData.createdById === user.id ||
+            resourceData.assignedToId === user.id
+          );
         case 'team':
           // Implementation depends on your team structure
           return this.isTeamMember(user.id, fieldValue);
@@ -343,7 +409,10 @@ export class RbacService {
   /**
    * Check if user is team member (placeholder implementation)
    */
-  private async isTeamMember(userId: string, targetValue: any): Promise<boolean> {
+  private async isTeamMember(
+    userId: string,
+    targetValue: any,
+  ): Promise<boolean> {
     // Implement based on your team structure
     return false;
   }

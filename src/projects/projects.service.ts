@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
 import { CreateProjectInput } from './dto/create-project.input';
@@ -15,12 +20,14 @@ export class ProjectsService {
   ) {}
 
   async create(data: CreateProjectInput, currentUserId: string) {
-    const canCreate = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.PROJECT, action: ActionType.CREATE }
-    );
+    const canCreate = await this.rbacService.hasPermission(currentUserId, {
+      resource: ResourceType.PROJECT,
+      action: ActionType.CREATE,
+    });
     if (!canCreate) {
-      throw new ForbiddenException('Insufficient permissions to create project');
+      throw new ForbiddenException(
+        'Insufficient permissions to create project',
+      );
     }
 
     const projectData = {
@@ -31,7 +38,9 @@ export class ProjectsService {
       type: (data.type as any) || 'FIXED_PRICE',
       startDate: data.startDate ? new Date(data.startDate) : null,
       endDate: data.endDate ? new Date(data.endDate) : null,
-      actualStartDate: data.actualStartDate ? new Date(data.actualStartDate) : null,
+      actualStartDate: data.actualStartDate
+        ? new Date(data.actualStartDate)
+        : null,
       actualEndDate: data.actualEndDate ? new Date(data.actualEndDate) : null,
     };
 
@@ -39,28 +48,37 @@ export class ProjectsService {
       data: projectData as any,
       include: {
         client: { select: { id: true, name: true } },
-        projectManager: { select: { id: true, firstName: true, lastName: true } },
+        projectManager: {
+          select: { id: true, firstName: true, lastName: true },
+        },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     });
   }
 
   async findAll(currentUserId: string, take?: number, skip?: number) {
-    const hasPermission = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.PROJECT, action: ActionType.READ }
-    );
+    const hasPermission = await this.rbacService.hasPermission(currentUserId, {
+      resource: ResourceType.PROJECT,
+      action: ActionType.READ,
+    });
     if (!hasPermission) {
-      throw new ForbiddenException('Insufficient permissions to access projects');
+      throw new ForbiddenException(
+        'Insufficient permissions to access projects',
+      );
     }
 
-    const filters = await this.rbacService.getPermissionFilters(currentUserId, ResourceType.PROJECT);
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      ResourceType.PROJECT,
+    );
 
     return this.prisma.project.findMany({
       where: { deletedAt: null, ...filters },
       include: {
         client: { select: { id: true, name: true } },
-        projectManager: { select: { id: true, firstName: true, lastName: true } },
+        projectManager: {
+          select: { id: true, firstName: true, lastName: true },
+        },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
       },
       take,
@@ -74,14 +92,16 @@ export class ProjectsService {
       where: { id, deletedAt: null },
       include: {
         client: true,
-        projectManager: { select: { id: true, firstName: true, lastName: true } },
-        teamMembers: { 
-          include: { 
-            user: { select: { id: true, firstName: true, lastName: true } } 
-          } 
+        projectManager: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+        teamMembers: {
+          include: {
+            user: { select: { id: true, firstName: true, lastName: true } },
+          },
         },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     });
 
     if (!project) {
@@ -91,10 +111,12 @@ export class ProjectsService {
     const canRead = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.PROJECT, action: ActionType.READ },
-      project
+      project,
     );
     if (!canRead) {
-      throw new ForbiddenException('Insufficient permissions to view this project');
+      throw new ForbiddenException(
+        'Insufficient permissions to view this project',
+      );
     }
 
     return project;
@@ -102,7 +124,7 @@ export class ProjectsService {
 
   async update(id: string, data: UpdateProjectInput, currentUserId: string) {
     const existingProject = await this.prisma.project.findUnique({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
 
     if (!existingProject) {
@@ -112,20 +134,28 @@ export class ProjectsService {
     const canUpdate = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.PROJECT, action: ActionType.UPDATE },
-      existingProject
+      existingProject,
     );
     if (!canUpdate) {
-      throw new ForbiddenException('Insufficient permissions to update this project');
+      throw new ForbiddenException(
+        'Insufficient permissions to update this project',
+      );
     }
 
     const { id: _, teamMemberIds, ...updateData } = data;
-    
+
     const processedData = {
       ...updateData,
-      startDate: data.startDate ? new Date(data.startDate) : updateData.startDate,
+      startDate: data.startDate
+        ? new Date(data.startDate)
+        : updateData.startDate,
       endDate: data.endDate ? new Date(data.endDate) : updateData.endDate,
-      actualStartDate: data.actualStartDate ? new Date(data.actualStartDate) : updateData.actualStartDate,
-      actualEndDate: data.actualEndDate ? new Date(data.actualEndDate) : updateData.actualEndDate,
+      actualStartDate: data.actualStartDate
+        ? new Date(data.actualStartDate)
+        : updateData.actualStartDate,
+      actualEndDate: data.actualEndDate
+        ? new Date(data.actualEndDate)
+        : updateData.actualEndDate,
     };
 
     return this.prisma.project.update({
@@ -133,20 +163,22 @@ export class ProjectsService {
       data: processedData as any,
       include: {
         client: true,
-        projectManager: { select: { id: true, firstName: true, lastName: true } },
-        teamMembers: { 
-          include: { 
-            user: { select: { id: true, firstName: true, lastName: true } } 
-          } 
+        projectManager: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+        teamMembers: {
+          include: {
+            user: { select: { id: true, firstName: true, lastName: true } },
+          },
         },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     });
   }
 
   async remove(id: string, currentUserId: string) {
     const existingProject = await this.prisma.project.findUnique({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
 
     if (!existingProject) {
@@ -156,10 +188,12 @@ export class ProjectsService {
     const canDelete = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.PROJECT, action: ActionType.DELETE },
-      existingProject
+      existingProject,
     );
     if (!canDelete) {
-      throw new ForbiddenException('Insufficient permissions to delete this project');
+      throw new ForbiddenException(
+        'Insufficient permissions to delete this project',
+      );
     }
 
     return this.prisma.project.update({
@@ -167,9 +201,11 @@ export class ProjectsService {
       data: { deletedAt: new Date() },
       include: {
         client: { select: { id: true, name: true } },
-        projectManager: { select: { id: true, firstName: true, lastName: true } },
+        projectManager: {
+          select: { id: true, firstName: true, lastName: true },
+        },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     });
   }
 }

@@ -59,7 +59,8 @@ export class ReportsResolver {
   @RequireResource(ResourceType.REPORT, ActionType.CREATE)
   async generateReport(
     @Args('reportId', { type: () => ID }) reportId: string,
-    @Args('parameters', { type: () => String, nullable: true }) parameters?: string,
+    @Args('parameters', { type: () => String, nullable: true })
+    parameters?: string,
     @CurrentUser() user?: User,
   ): Promise<Report> {
     const params = parameters ? JSON.parse(parameters) : {};
@@ -70,12 +71,19 @@ export class ReportsResolver {
   @RequireResource(ResourceType.REPORT, ActionType.READ)
   async executeReport(
     @Args('reportId', { type: () => ID }) reportId: string,
-    @Args('format', { type: () => String, defaultValue: 'JSON' }) format: string,
-    @Args('parameters', { type: () => String, nullable: true }) parameters?: string,
+    @Args('format', { type: () => String, defaultValue: 'JSON' })
+    format: string,
+    @Args('parameters', { type: () => String, nullable: true })
+    parameters?: string,
     @CurrentUser() user?: User,
   ): Promise<string> {
     const params = parameters ? JSON.parse(parameters) : {};
-    return this.reportsService.executeReport(reportId, user!.id, format, params);
+    return this.reportsService.executeReport(
+      reportId,
+      user!.id,
+      format,
+      params,
+    );
   }
 
   @Query(() => [Report], { name: 'salesReports' })
@@ -85,7 +93,10 @@ export class ReportsResolver {
     @Args('endDate', { type: () => Date, nullable: true }) endDate?: Date,
     @CurrentUser() user?: User,
   ): Promise<Report[]> {
-    return this.reportsService.getSalesReports(user!.id, { startDate, endDate });
+    return this.reportsService.getSalesReports(user!.id, {
+      startDate,
+      endDate,
+    });
   }
 
   @Query(() => [Report], { name: 'projectReports' })
@@ -100,7 +111,8 @@ export class ReportsResolver {
   @Query(() => [Report], { name: 'financialReports' })
   @RequireResource(ResourceType.REPORT, ActionType.READ)
   async getFinancialReports(
-    @Args('period', { type: () => String, defaultValue: 'monthly' }) period: string,
+    @Args('period', { type: () => String, defaultValue: 'monthly' })
+    period: string,
     @CurrentUser() user: User,
   ): Promise<Report[]> {
     return this.reportsService.getFinancialReports(user.id, period);
@@ -124,7 +136,12 @@ export class ReportsResolver {
     @Args('recipients', { type: () => [String] }) recipients: string[],
     @CurrentUser() user: User,
   ): Promise<Report> {
-    return this.reportsService.scheduleReport(reportId, schedule, recipients, user.id);
+    return this.reportsService.scheduleReport(
+      reportId,
+      schedule,
+      recipients,
+      user.id,
+    );
   }
 
   @Mutation(() => Boolean)

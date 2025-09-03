@@ -3,26 +3,26 @@ import { User } from '../../users/entities/user.entity';
 
 export enum ReportType {
   SALES = 'SALES',
-  ATTENDANCE = 'ATTENDANCE', 
+  ATTENDANCE = 'ATTENDANCE',
   PROJECT = 'PROJECT',
   EMPLOYEE = 'EMPLOYEE',
   FINANCIAL = 'FINANCIAL',
   CLIENT = 'CLIENT',
-  CUSTOM = 'CUSTOM'
+  CUSTOM = 'CUSTOM',
 }
 
 export enum ReportFormat {
   PDF = 'PDF',
   EXCEL = 'EXCEL',
   CSV = 'CSV',
-  JSON = 'JSON'
+  JSON = 'JSON',
 }
 
 export enum ReportStatus {
   PENDING = 'PENDING',
   GENERATING = 'GENERATING',
   COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED'
+  FAILED = 'FAILED',
 }
 
 registerEnumType(ReportType, { name: 'ReportType' });

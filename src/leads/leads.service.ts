@@ -1,9 +1,9 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ForbiddenException, 
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
   BadRequestException,
-  Logger 
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
@@ -23,13 +23,16 @@ export class LeadsService {
 
   async create(data: CreateLeadInput, currentUserId: string): Promise<Lead> {
     try {
-      this.logger.log('Creating lead', { currentUserId, data: { title: data.title } });
+      this.logger.log('Creating lead', {
+        currentUserId,
+        data: { title: data.title },
+      });
 
       // Check permissions
-      const canCreate = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.LEAD, action: ActionType.CREATE }
-      );
+      const canCreate = await this.rbacService.hasPermission(currentUserId, {
+        resource: ResourceType.LEAD,
+        action: ActionType.CREATE,
+      });
       if (!canCreate) {
         throw new ForbiddenException('Insufficient permissions to create lead');
       }
@@ -42,7 +45,7 @@ export class LeadsService {
       // Validate contact if provided
       if (data.contactId) {
         const contactExists = await this.prisma.contact.findUnique({
-          where: { id: data.contactId, deletedAt: null }
+          where: { id: data.contactId, deletedAt: null },
         });
         if (!contactExists) {
           throw new BadRequestException('Invalid contact ID provided');
@@ -52,7 +55,7 @@ export class LeadsService {
       // Validate company if provided
       if (data.companyId) {
         const companyExists = await this.prisma.company.findUnique({
-          where: { id: data.companyId, deletedAt: null }
+          where: { id: data.companyId, deletedAt: null },
         });
         if (!companyExists) {
           throw new BadRequestException('Invalid company ID provided');
@@ -62,7 +65,7 @@ export class LeadsService {
       // Validate assigned user if provided
       if (data.assignedToId) {
         const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true }
+          where: { id: data.assignedToId, isActive: true },
         });
         if (!userExists) {
           throw new BadRequestException('Invalid assigned user ID provided');
@@ -74,7 +77,9 @@ export class LeadsService {
         createdById: currentUserId,
         status: (data.status as any) || 'NEW',
         priority: (data.priority as any) || 'MEDIUM',
-        expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null,
+        expectedCloseDate: data.expectedCloseDate
+          ? new Date(data.expectedCloseDate)
+          : null,
       };
 
       const lead = await this.prisma.lead.create({
@@ -86,13 +91,13 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           company: {
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           assignedTo: {
             select: {
@@ -100,7 +105,7 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -108,17 +113,19 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       this.logger.log(`Lead created: ${lead.title}`);
       return lead;
-
     } catch (error) {
       this.logger.error(`Failed to create lead: ${error.message}`);
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create lead');
@@ -136,17 +143,19 @@ export class LeadsService {
       // Check permissions
       const hasPermission = await this.rbacService.hasPermission(
         currentUserId,
-        { resource: ResourceType.LEAD, action: ActionType.READ }
+        { resource: ResourceType.LEAD, action: ActionType.READ },
       );
 
       if (!hasPermission) {
-        throw new ForbiddenException('Insufficient permissions to access leads');
+        throw new ForbiddenException(
+          'Insufficient permissions to access leads',
+        );
       }
 
       // Get permission filters
       const filters = await this.rbacService.getPermissionFilters(
         currentUserId,
-        ResourceType.LEAD
+        ResourceType.LEAD,
       );
 
       const leads = await this.prisma.lead.findMany({
@@ -161,13 +170,13 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           company: {
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           assignedTo: {
             select: {
@@ -175,7 +184,7 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -183,8 +192,8 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
+            },
+          },
         },
         take,
         skip,
@@ -193,9 +202,11 @@ export class LeadsService {
 
       this.logger.log('Successfully retrieved leads', { count: leads.length });
       return leads;
-
     } catch (error) {
-      this.logger.error('Error finding leads', { error: error.message, currentUserId });
+      this.logger.error('Error finding leads', {
+        error: error.message,
+        currentUserId,
+      });
       if (error instanceof ForbiddenException) {
         throw error;
       }
@@ -214,13 +225,13 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           company: {
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           assignedTo: {
             select: {
@@ -228,7 +239,7 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -236,9 +247,9 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       if (!lead) {
@@ -249,29 +260,37 @@ export class LeadsService {
       const canRead = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.LEAD, action: ActionType.READ },
-        lead
+        lead,
       );
 
       if (!canRead) {
-        throw new ForbiddenException('Insufficient permissions to view this lead');
+        throw new ForbiddenException(
+          'Insufficient permissions to view this lead',
+        );
       }
 
       return lead;
-
     } catch (error) {
       this.logger.error(`Failed to find lead: ${error.message}`);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to retrieve lead');
     }
   }
 
-  async update(id: string, data: UpdateLeadInput, currentUserId: string): Promise<Lead> {
+  async update(
+    id: string,
+    data: UpdateLeadInput,
+    currentUserId: string,
+  ): Promise<Lead> {
     try {
       // Check if lead exists
       const existingLead = await this.prisma.lead.findUnique({
-        where: { id, deletedAt: null }
+        where: { id, deletedAt: null },
       });
 
       if (!existingLead) {
@@ -282,17 +301,19 @@ export class LeadsService {
       const canUpdate = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.LEAD, action: ActionType.UPDATE },
-        existingLead
+        existingLead,
       );
 
       if (!canUpdate) {
-        throw new ForbiddenException('Insufficient permissions to update this lead');
+        throw new ForbiddenException(
+          'Insufficient permissions to update this lead',
+        );
       }
 
       // Validate contact if provided
       if (data.contactId && data.contactId !== existingLead.contactId) {
         const contactExists = await this.prisma.contact.findUnique({
-          where: { id: data.contactId, deletedAt: null }
+          where: { id: data.contactId, deletedAt: null },
         });
         if (!contactExists) {
           throw new BadRequestException('Invalid contact ID provided');
@@ -302,7 +323,7 @@ export class LeadsService {
       // Validate company if provided
       if (data.companyId && data.companyId !== existingLead.companyId) {
         const companyExists = await this.prisma.company.findUnique({
-          where: { id: data.companyId, deletedAt: null }
+          where: { id: data.companyId, deletedAt: null },
         });
         if (!companyExists) {
           throw new BadRequestException('Invalid company ID provided');
@@ -310,9 +331,12 @@ export class LeadsService {
       }
 
       // Validate assigned user if provided
-      if (data.assignedToId && data.assignedToId !== existingLead.assignedToId) {
+      if (
+        data.assignedToId &&
+        data.assignedToId !== existingLead.assignedToId
+      ) {
         const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true }
+          where: { id: data.assignedToId, isActive: true },
         });
         if (!userExists) {
           throw new BadRequestException('Invalid assigned user ID provided');
@@ -320,11 +344,13 @@ export class LeadsService {
       }
 
       const { id: _, ...updateData } = data;
-      
+
       // Handle date conversion
       const processedData = {
         ...updateData,
-        expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : updateData.expectedCloseDate,
+        expectedCloseDate: data.expectedCloseDate
+          ? new Date(data.expectedCloseDate)
+          : updateData.expectedCloseDate,
       };
 
       const lead = await this.prisma.lead.update({
@@ -337,13 +363,13 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           company: {
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           assignedTo: {
             select: {
@@ -351,7 +377,7 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -359,19 +385,20 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       this.logger.log(`Lead updated: ${lead.title}`);
       return lead;
-
     } catch (error) {
       this.logger.error(`Failed to update lead: ${error.message}`);
-      if (error instanceof NotFoundException || 
-          error instanceof ForbiddenException || 
-          error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to update lead');
@@ -382,7 +409,7 @@ export class LeadsService {
     try {
       // Check if lead exists
       const existingLead = await this.prisma.lead.findUnique({
-        where: { id, deletedAt: null }
+        where: { id, deletedAt: null },
       });
 
       if (!existingLead) {
@@ -393,11 +420,13 @@ export class LeadsService {
       const canDelete = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.LEAD, action: ActionType.DELETE },
-        existingLead
+        existingLead,
       );
 
       if (!canDelete) {
-        throw new ForbiddenException('Insufficient permissions to delete this lead');
+        throw new ForbiddenException(
+          'Insufficient permissions to delete this lead',
+        );
       }
 
       // Soft delete
@@ -411,13 +440,13 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           company: {
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           assignedTo: {
             select: {
@@ -425,7 +454,7 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -433,17 +462,19 @@ export class LeadsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       this.logger.log(`Lead deleted: ${lead.title}`);
       return lead;
-
     } catch (error) {
       this.logger.error(`Failed to delete lead: ${error.message}`);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to delete lead');
@@ -454,7 +485,7 @@ export class LeadsService {
     try {
       // Check if lead exists
       const existingLead = await this.prisma.lead.findUnique({
-        where: { id: leadId, deletedAt: null }
+        where: { id: leadId, deletedAt: null },
       });
 
       if (!existingLead) {
@@ -465,16 +496,18 @@ export class LeadsService {
       const canUpdate = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.LEAD, action: ActionType.UPDATE },
-        existingLead
+        existingLead,
       );
 
       const canCreateDeal = await this.rbacService.hasPermission(
         currentUserId,
-        { resource: ResourceType.DEAL, action: ActionType.CREATE }
+        { resource: ResourceType.DEAL, action: ActionType.CREATE },
       );
 
       if (!canUpdate || !canCreateDeal) {
-        throw new ForbiddenException('Insufficient permissions to convert lead to deal');
+        throw new ForbiddenException(
+          'Insufficient permissions to convert lead to deal',
+        );
       }
 
       // Start transaction
@@ -494,13 +527,13 @@ export class LeadsService {
             priority: existingLead.priority,
             expectedCloseDate: existingLead.expectedCloseDate,
             description: existingLead.description,
-          }
+          },
         });
 
         // Update lead status to converted
         const updatedLead = await tx.lead.update({
           where: { id: leadId },
-          data: { status: 'CONVERTED' }
+          data: { status: 'CONVERTED' },
         });
 
         return { deal, lead: updatedLead };
@@ -508,10 +541,12 @@ export class LeadsService {
 
       this.logger.log(`Lead converted to deal: ${result.lead.title}`);
       return result;
-
     } catch (error) {
       this.logger.error(`Failed to convert lead to deal: ${error.message}`);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to convert lead to deal');

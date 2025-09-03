@@ -7,11 +7,11 @@ export class HealthService {
 
   async checkHealth() {
     const timestamp = new Date().toISOString();
-    
+
     try {
       // Check database connection
       const dbHealth = await this.prisma.getHealth();
-      
+
       // Check memory usage
       const memoryUsage = process.memoryUsage();
       const memoryInMB = {

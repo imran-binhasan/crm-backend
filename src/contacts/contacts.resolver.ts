@@ -54,7 +54,11 @@ export class ContactsResolver {
     @Args('updateContactInput') updateContactInput: UpdateContactInput,
     @CurrentUser() currentUser: User,
   ) {
-    return this.contactsService.update(updateContactInput.id, updateContactInput, currentUser.id);
+    return this.contactsService.update(
+      updateContactInput.id,
+      updateContactInput,
+      currentUser.id,
+    );
   }
 
   @Mutation(() => Contact)

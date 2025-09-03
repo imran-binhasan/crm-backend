@@ -97,10 +97,16 @@ export class InvoicesResolver {
   async markAsPaid(
     @Args('invoiceId', { type: () => ID }) invoiceId: string,
     @Args('paidAmount', { type: () => Number }) paidAmount: number,
-    @Args('paymentDate', { type: () => Date, nullable: true }) paymentDate?: Date,
+    @Args('paymentDate', { type: () => Date, nullable: true })
+    paymentDate?: Date,
     @CurrentUser() user?: User,
   ): Promise<Invoice> {
-    return this.invoicesService.markAsPaid(invoiceId, paidAmount, user!.id, paymentDate);
+    return this.invoicesService.markAsPaid(
+      invoiceId,
+      paidAmount,
+      user!.id,
+      paymentDate,
+    );
   }
 
   @Mutation(() => Invoice)
@@ -108,11 +114,15 @@ export class InvoicesResolver {
   async addPayment(
     @Args('invoiceId', { type: () => ID }) invoiceId: string,
     @Args('amount', { type: () => Number }) amount: number,
-    @Args('paymentMethod', { type: () => String, nullable: true }) paymentMethod?: string,
+    @Args('paymentMethod', { type: () => String, nullable: true })
+    paymentMethod?: string,
     @Args('notes', { type: () => String, nullable: true }) notes?: string,
     @CurrentUser() user?: User,
   ): Promise<Invoice> {
-    return this.invoicesService.addPayment(invoiceId, amount, user!.id, { paymentMethod, notes });
+    return this.invoicesService.addPayment(invoiceId, amount, user!.id, {
+      paymentMethod,
+      notes,
+    });
   }
 
   @Mutation(() => Invoice)

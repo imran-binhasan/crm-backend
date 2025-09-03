@@ -54,7 +54,11 @@ export class LeadsResolver {
     @Args('updateLeadInput') updateLeadInput: UpdateLeadInput,
     @CurrentUser() currentUser: User,
   ) {
-    return this.leadsService.update(updateLeadInput.id, updateLeadInput, currentUser.id);
+    return this.leadsService.update(
+      updateLeadInput.id,
+      updateLeadInput,
+      currentUser.id,
+    );
   }
 
   @Mutation(() => Lead)
@@ -67,7 +71,9 @@ export class LeadsResolver {
     return this.leadsService.remove(id, currentUser.id);
   }
 
-  @Mutation(() => String, { description: 'Convert lead to deal and return success message' })
+  @Mutation(() => String, {
+    description: 'Convert lead to deal and return success message',
+  })
   @UseGuards(PermissionGuard)
   @RequireResource(ResourceType.LEAD, ActionType.UPDATE)
   async convertLeadToDeal(

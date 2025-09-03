@@ -1,7 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
-import { ResourceType, ActionType } from '../common/rbac/permission.types';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 
@@ -29,7 +28,7 @@ export class EmployeesService {
         manager: { select: { id: true, firstName: true, lastName: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     }) as any;
   }
 
@@ -40,7 +39,7 @@ export class EmployeesService {
         manager: { select: { id: true, firstName: true, lastName: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     }) as any;
   }
 
@@ -51,8 +50,10 @@ export class EmployeesService {
         manager: { select: { id: true, firstName: true, lastName: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-        directReports: { select: { id: true, firstName: true, lastName: true } },
-      }
+        directReports: {
+          select: { id: true, firstName: true, lastName: true },
+        },
+      },
     });
 
     if (!employee) {
@@ -64,29 +65,29 @@ export class EmployeesService {
 
   async findByDepartment(department: string, currentUserId: string) {
     return this.prisma.employee.findMany({
-      where: { 
+      where: {
         department,
-        deletedAt: null 
+        deletedAt: null,
       },
       include: {
         manager: { select: { id: true, firstName: true, lastName: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     }) as any;
   }
 
   async findByManager(managerId: string, currentUserId: string) {
     return this.prisma.employee.findMany({
-      where: { 
+      where: {
         managerId,
-        deletedAt: null 
+        deletedAt: null,
       },
       include: {
         manager: { select: { id: true, firstName: true, lastName: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     }) as any;
   }
 
@@ -94,24 +95,28 @@ export class EmployeesService {
     // This would return the employee hierarchy (manager chain)
     const employee = await this.findOne(employeeId, currentUserId);
     const hierarchy = [employee];
-    
+
     let current = employee;
     while (current.managerId) {
       const manager = await this.findOne(current.managerId, currentUserId);
       hierarchy.unshift(manager);
       current = manager;
     }
-    
+
     return hierarchy as any;
   }
 
-  async update(id: string, updateEmployeeDto: UpdateEmployeeDto, currentUserId: string) {
+  async update(
+    id: string,
+    updateEmployeeDto: UpdateEmployeeDto,
+    currentUserId: string,
+  ) {
     const updateData: any = { ...updateEmployeeDto };
-    
+
     if (updateEmployeeDto.dateOfBirth) {
       updateData.dateOfBirth = new Date(updateEmployeeDto.dateOfBirth);
     }
-    
+
     if (updateEmployeeDto.hireDate) {
       updateData.hireDate = new Date(updateEmployeeDto.hireDate);
     }
@@ -123,18 +128,22 @@ export class EmployeesService {
         manager: { select: { id: true, firstName: true, lastName: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     }) as any;
   }
 
   async remove(id: string, currentUserId: string) {
     return this.prisma.employee.update({
       where: { id },
-      data: { deletedAt: new Date() }
+      data: { deletedAt: new Date() },
     });
   }
 
-  async assignManager(employeeId: string, managerId: string, currentUserId: string) {
+  async assignManager(
+    employeeId: string,
+    managerId: string,
+    currentUserId: string,
+  ) {
     return this.prisma.employee.update({
       where: { id: employeeId },
       data: { managerId },
@@ -142,11 +151,15 @@ export class EmployeesService {
         manager: { select: { id: true, firstName: true, lastName: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     }) as any;
   }
 
-  async updateEmploymentStatus(employeeId: string, status: string, currentUserId: string) {
+  async updateEmploymentStatus(
+    employeeId: string,
+    status: string,
+    currentUserId: string,
+  ) {
     return this.prisma.employee.update({
       where: { id: employeeId },
       data: { status: status as any }, // Cast to handle enum type
@@ -154,7 +167,7 @@ export class EmployeesService {
         manager: { select: { id: true, firstName: true, lastName: true } },
         user: { select: { id: true, firstName: true, lastName: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-      }
+      },
     }) as any;
   }
 }

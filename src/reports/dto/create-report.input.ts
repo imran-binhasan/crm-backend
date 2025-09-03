@@ -1,5 +1,14 @@
-import { InputType, Field, Int } from '@nestjs/graphql';
-import { IsString, IsOptional, IsEnum, IsNotEmpty, IsDateString, IsArray, ValidateNested, IsBoolean } from 'class-validator';
+import { InputType, Field } from '@nestjs/graphql';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNotEmpty,
+  IsDateString,
+  IsArray,
+  ValidateNested,
+  IsBoolean,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ReportType, ReportFormat } from '../entities/report.entity';
 

@@ -18,12 +18,15 @@ export class ProjectsResolver {
     @Args('createProjectInput') createProjectInput: CreateProjectInput,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Creating project', { 
+    this.logger.log('GraphQL: Creating project', {
       userId: context.req.user.sub,
-      project: createProjectInput.name 
+      project: createProjectInput.name,
     });
-    
-    return this.projectsService.create(createProjectInput, context.req.user.sub);
+
+    return this.projectsService.create(
+      createProjectInput,
+      context.req.user.sub,
+    );
   }
 
   @Query(() => [Project], { name: 'projects' })
@@ -48,12 +51,16 @@ export class ProjectsResolver {
     @Args('updateProjectInput') updateProjectInput: UpdateProjectInput,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Updating project', { 
+    this.logger.log('GraphQL: Updating project', {
       userId: context.req.user.sub,
-      projectId: updateProjectInput.id 
+      projectId: updateProjectInput.id,
     });
-    
-    return this.projectsService.update(updateProjectInput.id, updateProjectInput, context.req.user.sub);
+
+    return this.projectsService.update(
+      updateProjectInput.id,
+      updateProjectInput,
+      context.req.user.sub,
+    );
   }
 
   @Mutation(() => Project)
@@ -61,11 +68,11 @@ export class ProjectsResolver {
     @Args('id', { type: () => String }) id: string,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Removing project', { 
+    this.logger.log('GraphQL: Removing project', {
       userId: context.req.user.sub,
-      projectId: id 
+      projectId: id,
     });
-    
+
     return this.projectsService.remove(id, context.req.user.sub);
   }
 }

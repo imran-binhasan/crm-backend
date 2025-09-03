@@ -30,10 +30,14 @@ export class AttendanceResolver {
   async checkOut(
     @Args('attendanceId', { type: () => ID }) attendanceId: string,
     @Args('latitude', { type: () => Number, nullable: true }) latitude?: number,
-    @Args('longitude', { type: () => Number, nullable: true }) longitude?: number,
+    @Args('longitude', { type: () => Number, nullable: true })
+    longitude?: number,
     @CurrentUser() user?: User,
   ): Promise<Attendance> {
-    return this.attendanceService.checkOut(attendanceId, user!.id, { latitude, longitude });
+    return this.attendanceService.checkOut(attendanceId, user!.id, {
+      latitude,
+      longitude,
+    });
   }
 
   @Query(() => [Attendance], { name: 'attendance' })
@@ -59,7 +63,10 @@ export class AttendanceResolver {
     @Args('endDate', { type: () => Date, nullable: true }) endDate?: Date,
     @CurrentUser() user?: User,
   ): Promise<Attendance[]> {
-    return this.attendanceService.findByEmployee(employeeId, user!.id, { startDate, endDate });
+    return this.attendanceService.findByEmployee(employeeId, user!.id, {
+      startDate,
+      endDate,
+    });
   }
 
   @Query(() => [Attendance], { name: 'attendanceByDateRange' })
@@ -70,7 +77,12 @@ export class AttendanceResolver {
     @Args('employeeId', { type: () => ID, nullable: true }) employeeId?: string,
     @CurrentUser() user?: User,
   ): Promise<Attendance[]> {
-    return this.attendanceService.findByDateRange(startDate, endDate, user!.id, employeeId);
+    return this.attendanceService.findByDateRange(
+      startDate,
+      endDate,
+      user!.id,
+      employeeId,
+    );
   }
 
   @Query(() => [Attendance], { name: 'pendingAttendanceApprovals' })
@@ -97,7 +109,12 @@ export class AttendanceResolver {
     @Args('notes', { type: () => String, nullable: true }) notes?: string,
     @CurrentUser() user?: User,
   ): Promise<Attendance> {
-    return this.attendanceService.approveAttendance(attendanceId, approved, user!.id, notes);
+    return this.attendanceService.approveAttendance(
+      attendanceId,
+      approved,
+      user!.id,
+      notes,
+    );
   }
 
   @Mutation(() => Attendance)
@@ -108,7 +125,12 @@ export class AttendanceResolver {
     @Args('reason', { type: () => String }) reason: string,
     @CurrentUser() user: User,
   ): Promise<Attendance> {
-    return this.attendanceService.requestOvertime(attendanceId, overtimeHours, reason, user.id);
+    return this.attendanceService.requestOvertime(
+      attendanceId,
+      overtimeHours,
+      reason,
+      user.id,
+    );
   }
 
   @Mutation(() => Boolean)

@@ -44,14 +44,16 @@ export class AuthService {
 
   async register(registerInput: RegisterInput): Promise<AuthResponse> {
     // Check if user already exists
-    const existingUser = await this.usersService.findByEmail(registerInput.email);
+    const existingUser = await this.usersService.findByEmail(
+      registerInput.email,
+    );
     if (existingUser) {
       throw new UnauthorizedException('User already exists');
     }
 
     // Get default role (assuming there's a "User" role)
     const defaultRole = await this.prisma.role.findFirst({
-      where: { name: 'User' }
+      where: { name: 'User' },
     });
 
     if (!defaultRole) {
@@ -77,16 +79,19 @@ export class AuthService {
     };
   }
 
-  async hasPermissions(userId: string, permissions: string[]): Promise<boolean> {
+  async hasPermissions(
+    userId: string,
+    permissions: string[],
+  ): Promise<boolean> {
     return this.rbacService.hasAllPermissions(
       userId,
-      permissions.map(p => {
+      permissions.map((p) => {
         const [resource, action] = p.split(':');
         return {
           resource: resource as any,
           action: action as any,
         };
-      })
+      }),
     );
   }
 }

@@ -104,6 +104,10 @@ export class EmployeesResolver {
     @Args('status') status: string,
     @CurrentUser() user: User,
   ): Promise<Employee> {
-    return this.employeesService.updateEmploymentStatus(employeeId, status, user.id);
+    return this.employeesService.updateEmploymentStatus(
+      employeeId,
+      status,
+      user.id,
+    );
   }
 }

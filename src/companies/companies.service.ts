@@ -1,10 +1,10 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ForbiddenException, 
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
   BadRequestException,
   ConflictException,
-  Logger 
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
@@ -22,17 +22,25 @@ export class CompaniesService {
     private readonly rbacService: RbacService,
   ) {}
 
-  async create(data: CreateCompanyInput, currentUserId: string): Promise<Company> {
+  async create(
+    data: CreateCompanyInput,
+    currentUserId: string,
+  ): Promise<Company> {
     try {
-      this.logger.log('Creating company', { currentUserId, data: { name: data.name } });
+      this.logger.log('Creating company', {
+        currentUserId,
+        data: { name: data.name },
+      });
 
       // Check permissions
-      const canCreate = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.COMPANY, action: ActionType.CREATE }
-      );
+      const canCreate = await this.rbacService.hasPermission(currentUserId, {
+        resource: ResourceType.COMPANY,
+        action: ActionType.CREATE,
+      });
       if (!canCreate) {
-        throw new ForbiddenException('Insufficient permissions to create company');
+        throw new ForbiddenException(
+          'Insufficient permissions to create company',
+        );
       }
 
       // Validate input
@@ -42,10 +50,10 @@ export class CompaniesService {
 
       // Check if company with same name exists
       const existingCompany = await this.prisma.company.findFirst({
-        where: { 
+        where: {
           name: { equals: data.name, mode: 'insensitive' },
-          deletedAt: null 
-        }
+          deletedAt: null,
+        },
       });
 
       if (existingCompany) {
@@ -55,7 +63,7 @@ export class CompaniesService {
       // Check if assigned user exists (if provided)
       if (data.assignedToId) {
         const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true }
+          where: { id: data.assignedToId, isActive: true },
         });
         if (!userExists) {
           throw new BadRequestException('Invalid assigned user ID provided');
@@ -75,7 +83,7 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -83,19 +91,20 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       this.logger.log(`Company created: ${company.name}`);
       return company;
-
     } catch (error) {
       this.logger.error(`Failed to create company: ${error.message}`);
-      if (error instanceof BadRequestException || 
-          error instanceof ForbiddenException ||
-          error instanceof ConflictException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create company');
@@ -113,17 +122,19 @@ export class CompaniesService {
       // Check permissions
       const hasPermission = await this.rbacService.hasPermission(
         currentUserId,
-        { resource: ResourceType.COMPANY, action: ActionType.READ }
+        { resource: ResourceType.COMPANY, action: ActionType.READ },
       );
 
       if (!hasPermission) {
-        throw new ForbiddenException('Insufficient permissions to access companies');
+        throw new ForbiddenException(
+          'Insufficient permissions to access companies',
+        );
       }
 
       // Get permission filters
       const filters = await this.rbacService.getPermissionFilters(
         currentUserId,
-        ResourceType.COMPANY
+        ResourceType.COMPANY,
       );
 
       const companies = await this.prisma.company.findMany({
@@ -138,7 +149,7 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -146,19 +157,23 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
+            },
+          },
         },
         take,
         skip,
         orderBy: { createdAt: 'desc' },
       });
 
-      this.logger.log('Successfully retrieved companies', { count: companies.length });
+      this.logger.log('Successfully retrieved companies', {
+        count: companies.length,
+      });
       return companies;
-
     } catch (error) {
-      this.logger.error('Error finding companies', { error: error.message, currentUserId });
+      this.logger.error('Error finding companies', {
+        error: error.message,
+        currentUserId,
+      });
       if (error instanceof ForbiddenException) {
         throw error;
       }
@@ -177,7 +192,7 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -185,9 +200,9 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       if (!company) {
@@ -198,29 +213,37 @@ export class CompaniesService {
       const canRead = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.COMPANY, action: ActionType.READ },
-        company
+        company,
       );
 
       if (!canRead) {
-        throw new ForbiddenException('Insufficient permissions to view this company');
+        throw new ForbiddenException(
+          'Insufficient permissions to view this company',
+        );
       }
 
       return company;
-
     } catch (error) {
       this.logger.error(`Failed to find company: ${error.message}`);
-      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to retrieve company');
     }
   }
 
-  async update(id: string, data: UpdateCompanyInput, currentUserId: string): Promise<Company> {
+  async update(
+    id: string,
+    data: UpdateCompanyInput,
+    currentUserId: string,
+  ): Promise<Company> {
     try {
       // Check if company exists
       const existingCompany = await this.prisma.company.findUnique({
-        where: { id, deletedAt: null }
+        where: { id, deletedAt: null },
       });
 
       if (!existingCompany) {
@@ -231,21 +254,23 @@ export class CompaniesService {
       const canUpdate = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.COMPANY, action: ActionType.UPDATE },
-        existingCompany
+        existingCompany,
       );
 
       if (!canUpdate) {
-        throw new ForbiddenException('Insufficient permissions to update this company');
+        throw new ForbiddenException(
+          'Insufficient permissions to update this company',
+        );
       }
 
       // Check for name conflicts if name is being changed
       if (data.name && data.name !== existingCompany.name) {
         const duplicateCompany = await this.prisma.company.findFirst({
-          where: { 
+          where: {
             name: { equals: data.name, mode: 'insensitive' },
             deletedAt: null,
-            id: { not: id }
-          }
+            id: { not: id },
+          },
         });
 
         if (duplicateCompany) {
@@ -254,9 +279,12 @@ export class CompaniesService {
       }
 
       // Validate assigned user if provided
-      if (data.assignedToId && data.assignedToId !== existingCompany.assignedToId) {
+      if (
+        data.assignedToId &&
+        data.assignedToId !== existingCompany.assignedToId
+      ) {
         const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true }
+          where: { id: data.assignedToId, isActive: true },
         });
         if (!userExists) {
           throw new BadRequestException('Invalid assigned user ID provided');
@@ -275,7 +303,7 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -283,20 +311,21 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       this.logger.log(`Company updated: ${company.name}`);
       return company;
-
     } catch (error) {
       this.logger.error(`Failed to update company: ${error.message}`);
-      if (error instanceof NotFoundException || 
-          error instanceof ForbiddenException || 
-          error instanceof BadRequestException ||
-          error instanceof ConflictException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to update company');
@@ -307,7 +336,7 @@ export class CompaniesService {
     try {
       // Check if company exists
       const existingCompany = await this.prisma.company.findUnique({
-        where: { id, deletedAt: null }
+        where: { id, deletedAt: null },
       });
 
       if (!existingCompany) {
@@ -318,20 +347,24 @@ export class CompaniesService {
       const canDelete = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.COMPANY, action: ActionType.DELETE },
-        existingCompany
+        existingCompany,
       );
 
       if (!canDelete) {
-        throw new ForbiddenException('Insufficient permissions to delete this company');
+        throw new ForbiddenException(
+          'Insufficient permissions to delete this company',
+        );
       }
 
       // Check if company has associated records
       const associatedRecords = await this.prisma.contact.findFirst({
-        where: { companyId: id, deletedAt: null }
+        where: { companyId: id, deletedAt: null },
       });
 
       if (associatedRecords) {
-        throw new BadRequestException('Cannot delete company with associated contacts');
+        throw new BadRequestException(
+          'Cannot delete company with associated contacts',
+        );
       }
 
       // Soft delete
@@ -345,7 +378,7 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -353,19 +386,20 @@ export class CompaniesService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       this.logger.log(`Company deleted: ${company.name}`);
       return company;
-
     } catch (error) {
       this.logger.error(`Failed to delete company: ${error.message}`);
-      if (error instanceof NotFoundException || 
-          error instanceof ForbiddenException || 
-          error instanceof BadRequestException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ForbiddenException ||
+        error instanceof BadRequestException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to delete company');

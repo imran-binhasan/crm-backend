@@ -54,7 +54,11 @@ export class CompaniesResolver {
     @Args('updateCompanyInput') updateCompanyInput: UpdateCompanyInput,
     @CurrentUser() currentUser: User,
   ) {
-    return this.companiesService.update(updateCompanyInput.id, updateCompanyInput, currentUser.id);
+    return this.companiesService.update(
+      updateCompanyInput.id,
+      updateCompanyInput,
+      currentUser.id,
+    );
   }
 
   @Mutation(() => Company)

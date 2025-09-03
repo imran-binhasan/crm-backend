@@ -32,17 +32,19 @@ export class PermissionGuard implements CanActivate {
     // Parse permissions and check each one
     for (const permission of requiredPermissions) {
       const [resource, action, condition] = permission.split(':');
-      
+
       const permissionCheck = {
         resource: resource as ResourceType,
         action: action as ActionType,
-        conditions: condition ? [{ field: 'ownership', operator: condition as any, value: user.id }] : undefined,
+        conditions: condition
+          ? [{ field: 'ownership', operator: condition as any, value: user.id }]
+          : undefined,
       };
 
       const hasPermission = await this.rbacService.hasPermission(
         user.id,
         permissionCheck,
-        this.getResourceData(ctx)
+        this.getResourceData(ctx),
       );
 
       if (hasPermission) {

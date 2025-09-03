@@ -1,9 +1,9 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ForbiddenException, 
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
   BadRequestException,
-  Logger 
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
@@ -23,13 +23,16 @@ export class DealsService {
 
   async create(data: CreateDealInput, currentUserId: string): Promise<Deal> {
     try {
-      this.logger.log('Creating deal', { currentUserId, data: { title: data.title } });
+      this.logger.log('Creating deal', {
+        currentUserId,
+        data: { title: data.title },
+      });
 
       // Check permissions
-      const canCreate = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.DEAL, action: ActionType.CREATE }
-      );
+      const canCreate = await this.rbacService.hasPermission(currentUserId, {
+        resource: ResourceType.DEAL,
+        action: ActionType.CREATE,
+      });
       if (!canCreate) {
         throw new ForbiddenException('Insufficient permissions to create deal');
       }
@@ -42,7 +45,7 @@ export class DealsService {
       // Validate relationships
       if (data.contactId) {
         const contactExists = await this.prisma.contact.findUnique({
-          where: { id: data.contactId, deletedAt: null }
+          where: { id: data.contactId, deletedAt: null },
         });
         if (!contactExists) {
           throw new BadRequestException('Invalid contact ID provided');
@@ -51,7 +54,7 @@ export class DealsService {
 
       if (data.companyId) {
         const companyExists = await this.prisma.company.findUnique({
-          where: { id: data.companyId, deletedAt: null }
+          where: { id: data.companyId, deletedAt: null },
         });
         if (!companyExists) {
           throw new BadRequestException('Invalid company ID provided');
@@ -60,7 +63,7 @@ export class DealsService {
 
       if (data.assignedToId) {
         const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true }
+          where: { id: data.assignedToId, isActive: true },
         });
         if (!userExists) {
           throw new BadRequestException('Invalid assigned user ID provided');
@@ -73,8 +76,12 @@ export class DealsService {
         stage: (data.stage as any) || 'PROSPECTING',
         priority: (data.priority as any) || 'MEDIUM',
         probability: data.probability || 0,
-        expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null,
-        actualCloseDate: data.actualCloseDate ? new Date(data.actualCloseDate) : null,
+        expectedCloseDate: data.expectedCloseDate
+          ? new Date(data.expectedCloseDate)
+          : null,
+        actualCloseDate: data.actualCloseDate
+          ? new Date(data.actualCloseDate)
+          : null,
       };
 
       const deal = await this.prisma.deal.create({
@@ -86,13 +93,13 @@ export class DealsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           company: {
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           assignedTo: {
             select: {
@@ -100,7 +107,7 @@ export class DealsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -108,17 +115,19 @@ export class DealsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
-        }
+            },
+          },
+        },
       });
 
       this.logger.log(`Deal created: ${deal.title} - $${deal.value}`);
       return deal;
-
     } catch (error) {
       this.logger.error(`Failed to create deal: ${error.message}`);
-      if (error instanceof BadRequestException || error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create deal');
@@ -134,16 +143,18 @@ export class DealsService {
       // Check permissions and get filters
       const hasPermission = await this.rbacService.hasPermission(
         currentUserId,
-        { resource: ResourceType.DEAL, action: ActionType.READ }
+        { resource: ResourceType.DEAL, action: ActionType.READ },
       );
 
       if (!hasPermission) {
-        throw new ForbiddenException('Insufficient permissions to access deals');
+        throw new ForbiddenException(
+          'Insufficient permissions to access deals',
+        );
       }
 
       const filters = await this.rbacService.getPermissionFilters(
         currentUserId,
-        ResourceType.DEAL
+        ResourceType.DEAL,
       );
 
       const deals = await this.prisma.deal.findMany({
@@ -158,13 +169,13 @@ export class DealsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           company: {
             select: {
               id: true,
               name: true,
-            }
+            },
           },
           assignedTo: {
             select: {
@@ -172,7 +183,7 @@ export class DealsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
+            },
           },
           createdBy: {
             select: {
@@ -180,8 +191,8 @@ export class DealsService {
               firstName: true,
               lastName: true,
               email: true,
-            }
-          }
+            },
+          },
         },
         take,
         skip,
@@ -190,7 +201,10 @@ export class DealsService {
 
       return deals;
     } catch (error) {
-      this.logger.error('Error finding deals', { error: error.message, currentUserId });
+      this.logger.error('Error finding deals', {
+        error: error.message,
+        currentUserId,
+      });
       if (error instanceof ForbiddenException) {
         throw error;
       }
@@ -210,7 +224,7 @@ export class DealsService {
             firstName: true,
             lastName: true,
             email: true,
-          }
+          },
         },
         createdBy: {
           select: {
@@ -218,9 +232,9 @@ export class DealsService {
             firstName: true,
             lastName: true,
             email: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     if (!deal) {
@@ -230,19 +244,25 @@ export class DealsService {
     const canRead = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.DEAL, action: ActionType.READ },
-      deal
+      deal,
     );
 
     if (!canRead) {
-      throw new ForbiddenException('Insufficient permissions to view this deal');
+      throw new ForbiddenException(
+        'Insufficient permissions to view this deal',
+      );
     }
 
     return deal;
   }
 
-  async update(id: string, data: UpdateDealInput, currentUserId: string): Promise<Deal> {
+  async update(
+    id: string,
+    data: UpdateDealInput,
+    currentUserId: string,
+  ): Promise<Deal> {
     const existingDeal = await this.prisma.deal.findUnique({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
 
     if (!existingDeal) {
@@ -252,19 +272,25 @@ export class DealsService {
     const canUpdate = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.DEAL, action: ActionType.UPDATE },
-      existingDeal
+      existingDeal,
     );
 
     if (!canUpdate) {
-      throw new ForbiddenException('Insufficient permissions to update this deal');
+      throw new ForbiddenException(
+        'Insufficient permissions to update this deal',
+      );
     }
 
     const { id: _, ...updateData } = data;
-    
+
     const processedData = {
       ...updateData,
-      expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : updateData.expectedCloseDate,
-      actualCloseDate: data.actualCloseDate ? new Date(data.actualCloseDate) : updateData.actualCloseDate,
+      expectedCloseDate: data.expectedCloseDate
+        ? new Date(data.expectedCloseDate)
+        : updateData.expectedCloseDate,
+      actualCloseDate: data.actualCloseDate
+        ? new Date(data.actualCloseDate)
+        : updateData.actualCloseDate,
     };
 
     return this.prisma.deal.update({
@@ -279,7 +305,7 @@ export class DealsService {
             firstName: true,
             lastName: true,
             email: true,
-          }
+          },
         },
         createdBy: {
           select: {
@@ -287,15 +313,15 @@ export class DealsService {
             firstName: true,
             lastName: true,
             email: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
   }
 
   async remove(id: string, currentUserId: string): Promise<Deal> {
     const existingDeal = await this.prisma.deal.findUnique({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
 
     if (!existingDeal) {
@@ -305,11 +331,13 @@ export class DealsService {
     const canDelete = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.DEAL, action: ActionType.DELETE },
-      existingDeal
+      existingDeal,
     );
 
     if (!canDelete) {
-      throw new ForbiddenException('Insufficient permissions to delete this deal');
+      throw new ForbiddenException(
+        'Insufficient permissions to delete this deal',
+      );
     }
 
     return this.prisma.deal.update({
@@ -324,9 +352,9 @@ export class DealsService {
             firstName: true,
             lastName: true,
             email: true,
-          }
-        }
-      }
+          },
+        },
+      },
     });
   }
 }

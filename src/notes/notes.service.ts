@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
 import { CreateNoteInput } from './dto/create-note.input';
@@ -16,10 +21,10 @@ export class NotesService {
   ) {}
 
   async create(data: CreateNoteInput, currentUserId: string): Promise<Note> {
-    const canCreate = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.NOTE, action: ActionType.CREATE }
-    );
+    const canCreate = await this.rbacService.hasPermission(currentUserId, {
+      resource: ResourceType.NOTE,
+      action: ActionType.CREATE,
+    });
     if (!canCreate) {
       throw new ForbiddenException('Insufficient permissions to create note');
     }
@@ -37,37 +42,45 @@ export class NotesService {
         company: { select: { id: true, name: true } },
         lead: { select: { id: true, title: true } },
         deal: { select: { id: true, title: true } },
-        createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
-      }
+        createdBy: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+      },
     });
   }
 
-  async findAll(currentUserId: string, take?: number, skip?: number): Promise<Note[]> {
-    const hasPermission = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.NOTE, action: ActionType.READ }
-    );
+  async findAll(
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Note[]> {
+    const hasPermission = await this.rbacService.hasPermission(currentUserId, {
+      resource: ResourceType.NOTE,
+      action: ActionType.READ,
+    });
     if (!hasPermission) {
       throw new ForbiddenException('Insufficient permissions to access notes');
     }
 
-    const filters = await this.rbacService.getPermissionFilters(currentUserId, ResourceType.NOTE);
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      ResourceType.NOTE,
+    );
 
     return this.prisma.note.findMany({
-      where: { 
-        deletedAt: null, 
+      where: {
+        deletedAt: null,
         ...filters,
-        OR: [
-          { isPrivate: false },
-          { createdById: currentUserId }
-        ]
+        OR: [{ isPrivate: false }, { createdById: currentUserId }],
       },
       include: {
         contact: { select: { id: true, firstName: true, lastName: true } },
         company: { select: { id: true, name: true } },
         lead: { select: { id: true, title: true } },
         deal: { select: { id: true, title: true } },
-        createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
+        createdBy: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
       },
       take,
       skip,
@@ -83,8 +96,10 @@ export class NotesService {
         company: true,
         lead: true,
         deal: true,
-        createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
-      }
+        createdBy: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+      },
     });
 
     if (!note) {
@@ -99,18 +114,24 @@ export class NotesService {
     const canRead = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.NOTE, action: ActionType.READ },
-      note
+      note,
     );
     if (!canRead) {
-      throw new ForbiddenException('Insufficient permissions to view this note');
+      throw new ForbiddenException(
+        'Insufficient permissions to view this note',
+      );
     }
 
     return note;
   }
 
-  async update(id: string, data: UpdateNoteInput, currentUserId: string): Promise<Note> {
+  async update(
+    id: string,
+    data: UpdateNoteInput,
+    currentUserId: string,
+  ): Promise<Note> {
     const existingNote = await this.prisma.note.findUnique({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
 
     if (!existingNote) {
@@ -120,10 +141,12 @@ export class NotesService {
     const canUpdate = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.NOTE, action: ActionType.UPDATE },
-      existingNote
+      existingNote,
     );
     if (!canUpdate) {
-      throw new ForbiddenException('Insufficient permissions to update this note');
+      throw new ForbiddenException(
+        'Insufficient permissions to update this note',
+      );
     }
 
     const { id: _, ...updateData } = data;
@@ -136,14 +159,16 @@ export class NotesService {
         company: true,
         lead: true,
         deal: true,
-        createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
-      }
+        createdBy: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+      },
     });
   }
 
   async remove(id: string, currentUserId: string): Promise<Note> {
     const existingNote = await this.prisma.note.findUnique({
-      where: { id, deletedAt: null }
+      where: { id, deletedAt: null },
     });
 
     if (!existingNote) {
@@ -153,10 +178,12 @@ export class NotesService {
     const canDelete = await this.rbacService.hasPermission(
       currentUserId,
       { resource: ResourceType.NOTE, action: ActionType.DELETE },
-      existingNote
+      existingNote,
     );
     if (!canDelete) {
-      throw new ForbiddenException('Insufficient permissions to delete this note');
+      throw new ForbiddenException(
+        'Insufficient permissions to delete this note',
+      );
     }
 
     return this.prisma.note.update({
@@ -167,8 +194,10 @@ export class NotesService {
         company: true,
         lead: true,
         deal: true,
-        createdBy: { select: { id: true, firstName: true, lastName: true, email: true } },
-      }
+        createdBy: {
+          select: { id: true, firstName: true, lastName: true, email: true },
+        },
+      },
     });
   }
 }

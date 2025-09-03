@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
 import { CreateInvoiceDto } from './dto/create-invoice.dto';
@@ -61,7 +61,11 @@ export class InvoicesService {
     return [];
   }
 
-  async update(id: string, updateInvoiceDto: UpdateInvoiceDto, currentUserId: string) {
+  async update(
+    id: string,
+    updateInvoiceDto: UpdateInvoiceDto,
+    currentUserId: string,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id,
@@ -79,7 +83,12 @@ export class InvoicesService {
     } as any;
   }
 
-  async markAsPaid(invoiceId: string, paidAmount: number, currentUserId: string, paymentDate?: Date) {
+  async markAsPaid(
+    invoiceId: string,
+    paidAmount: number,
+    currentUserId: string,
+    paymentDate?: Date,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id: invoiceId,
@@ -90,7 +99,12 @@ export class InvoicesService {
     } as any;
   }
 
-  async addPayment(invoiceId: string, amount: number, currentUserId: string, options?: { paymentMethod?: string; notes?: string }) {
+  async addPayment(
+    invoiceId: string,
+    amount: number,
+    currentUserId: string,
+    options?: { paymentMethod?: string; notes?: string },
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id: invoiceId,

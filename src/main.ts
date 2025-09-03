@@ -7,7 +7,7 @@ import helmet from 'helmet';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
-  
+
   try {
     const app = await NestFactory.create(AppModule, {
       logger: ['error', 'warn', 'log', 'debug', 'verbose'],
@@ -17,30 +17,36 @@ async function bootstrap() {
     const prismaService = app.get(PrismaService);
 
     // Security
-    app.use(helmet({
-      contentSecurityPolicy: process.env.NODE_ENV === 'production' ? undefined : false,
-      crossOriginEmbedderPolicy: false,
-    }));
+    app.use(
+      helmet({
+        contentSecurityPolicy:
+          process.env.NODE_ENV === 'production' ? undefined : false,
+        crossOriginEmbedderPolicy: false,
+      }),
+    );
 
     // CORS configuration
     app.enableCors({
-      origin: process.env.NODE_ENV === 'production' 
-        ? [process.env.FRONTEND_URL || 'https://yourdomain.com']
-        : true,
+      origin:
+        process.env.NODE_ENV === 'production'
+          ? [process.env.FRONTEND_URL || 'https://yourdomain.com']
+          : true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'x-request-id'],
     });
 
     // Global validation pipe
-    app.useGlobalPipes(new ValidationPipe({
-      whitelist: true, // Strip unknown properties
-      forbidNonWhitelisted: true, // Throw error on unknown properties
-      transform: true, // Auto-transform payloads
-      transformOptions: {
-        enableImplicitConversion: true,
-      },
-    }));
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true, // Strip unknown properties
+        forbidNonWhitelisted: true, // Throw error on unknown properties
+        transform: true, // Auto-transform payloads
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
+      }),
+    );
 
     // Enable shutdown hooks
     app.enableShutdownHooks();
@@ -72,7 +78,6 @@ async function bootstrap() {
       await app.close();
       process.exit(0);
     });
-
   } catch (error) {
     logger.error('💥 Failed to start application:', error);
     process.exit(1);

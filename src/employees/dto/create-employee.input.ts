@@ -1,5 +1,14 @@
 import { InputType, Field, Float, Int } from '@nestjs/graphql';
-import { IsString, IsOptional, IsEmail, IsEnum, IsNotEmpty, IsNumber, Min, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  Min,
+  IsDateString,
+} from 'class-validator';
 
 @InputType()
 export class CreateEmployeeInput {

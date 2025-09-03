@@ -1,8 +1,16 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
 
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
+{
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
@@ -22,7 +30,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // Log slow queries
     this.$on('query' as never, (e: any) => {
       if (e.duration > 1000) {
-        this.logger.warn(`🐌 Slow query detected: ${e.duration}ms - ${e.query}`);
+        this.logger.warn(
+          `🐌 Slow query detected: ${e.duration}ms - ${e.query}`,
+        );
       }
     });
 
@@ -41,7 +51,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     try {
       await this.$connect();
       this.logger.log('✅ Database connection established successfully');
-      
+
       // Test database connection
       await this.$queryRaw`SELECT 1`;
       this.logger.log('✅ Database connectivity test passed');

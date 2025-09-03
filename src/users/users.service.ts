@@ -1,10 +1,10 @@
-import { 
-  Injectable, 
-  NotFoundException, 
-  ForbiddenException, 
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
   ConflictException,
   BadRequestException,
-  Logger 
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
@@ -28,12 +28,14 @@ export class UsersService {
     try {
       // Check permissions if currentUserId is provided
       if (currentUserId) {
-        const canCreate = await this.rbacService.hasPermission(
-          currentUserId,
-          { resource: ResourceType.USER, action: ActionType.CREATE }
-        );
+        const canCreate = await this.rbacService.hasPermission(currentUserId, {
+          resource: ResourceType.USER,
+          action: ActionType.CREATE,
+        });
         if (!canCreate) {
-          throw new ForbiddenException('Insufficient permissions to create user');
+          throw new ForbiddenException(
+            'Insufficient permissions to create user',
+          );
         }
       }
 
@@ -44,7 +46,7 @@ export class UsersService {
 
       // Check if user already exists
       const existingUser = await this.prisma.user.findUnique({
-        where: { email: data.email }
+        where: { email: data.email },
       });
 
       if (existingUser) {
@@ -53,7 +55,7 @@ export class UsersService {
 
       // Validate role exists
       const roleExists = await this.prisma.role.findUnique({
-        where: { id: data.roleId }
+        where: { id: data.roleId },
       });
 
       if (!roleExists) {
@@ -61,7 +63,7 @@ export class UsersService {
       }
 
       const hashedPassword = await bcrypt.hash(data.password, 12);
-      
+
       const user = await this.prisma.user.create({
         data: {
           ...data,
@@ -78,14 +80,17 @@ export class UsersService {
         },
       });
 
-      this.logger.log(`User created: ${user.email} by ${currentUserId || 'system'}`);
+      this.logger.log(
+        `User created: ${user.email} by ${currentUserId || 'system'}`,
+      );
       return user;
-
     } catch (error) {
       this.logger.error(`Failed to create user: ${error.message}`);
-      if (error instanceof BadRequestException || 
-          error instanceof ConflictException || 
-          error instanceof ForbiddenException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException ||
+        error instanceof ForbiddenException
+      ) {
         throw error;
       }
       throw new BadRequestException('Failed to create user');
@@ -103,17 +108,19 @@ export class UsersService {
       // Check if user has permission to read users
       const hasPermission = await this.rbacService.hasPermission(
         currentUserId,
-        { resource: ResourceType.USER, action: ActionType.READ }
+        { resource: ResourceType.USER, action: ActionType.READ },
       );
 
       if (!hasPermission) {
-        throw new ForbiddenException('Insufficient permissions to access users');
+        throw new ForbiddenException(
+          'Insufficient permissions to access users',
+        );
       }
 
       // Get permission filters for user resource
       const filters = await this.rbacService.getPermissionFilters(
         currentUserId,
-        ResourceType.USER
+        ResourceType.USER,
       );
 
       const users = await this.prisma.user.findMany({
@@ -145,9 +152,9 @@ export class UsersService {
       });
 
       this.logger.log('Successfully retrieved users', { count: users.length });
-      
+
       // Transform to SafeUser format
-      return users.map(user => ({
+      return users.map((user) => ({
         id: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
@@ -160,7 +167,10 @@ export class UsersService {
         role: user.role,
       })) as SafeUser[];
     } catch (error) {
-      this.logger.error('Error finding users', { error: error.message, currentUserId });
+      this.logger.error('Error finding users', {
+        error: error.message,
+        currentUserId,
+      });
       if (error instanceof ForbiddenException) {
         throw error;
       }
@@ -177,10 +187,12 @@ export class UsersService {
       const canRead = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.USER, action: ActionType.READ },
-        user
+        user,
       );
       if (!canRead) {
-        throw new ForbiddenException('Insufficient permissions to view this user');
+        throw new ForbiddenException(
+          'Insufficient permissions to view this user',
+        );
       }
     }
 
@@ -191,7 +203,11 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
-  async update(id: string, data: UpdateUserInput, currentUserId?: string): Promise<User> {
+  async update(
+    id: string,
+    data: UpdateUserInput,
+    currentUserId?: string,
+  ): Promise<User> {
     // Check if user exists
     const existingUser = await this.prisma.user.findUnique({ where: { id } });
     if (!existingUser) throw new NotFoundException('User not found');
@@ -201,10 +217,12 @@ export class UsersService {
       const canUpdate = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.USER, action: ActionType.UPDATE },
-        existingUser
+        existingUser,
       );
       if (!canUpdate) {
-        throw new ForbiddenException('Insufficient permissions to update this user');
+        throw new ForbiddenException(
+          'Insufficient permissions to update this user',
+        );
       }
     }
 
@@ -221,25 +239,33 @@ export class UsersService {
       const canDelete = await this.rbacService.hasPermission(
         currentUserId,
         { resource: ResourceType.USER, action: ActionType.DELETE },
-        existingUser
+        existingUser,
       );
       if (!canDelete) {
-        throw new ForbiddenException('Insufficient permissions to delete this user');
+        throw new ForbiddenException(
+          'Insufficient permissions to delete this user',
+        );
       }
     }
 
     return this.prisma.user.delete({ where: { id } });
   }
 
-  async assignRole(userId: string, roleId: string, currentUserId?: string): Promise<User> {
+  async assignRole(
+    userId: string,
+    roleId: string,
+    currentUserId?: string,
+  ): Promise<User> {
     // Check assign permissions
     if (currentUserId) {
-      const canAssign = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.USER, action: ActionType.ASSIGN }
-      );
+      const canAssign = await this.rbacService.hasPermission(currentUserId, {
+        resource: ResourceType.USER,
+        action: ActionType.ASSIGN,
+      });
       if (!canAssign) {
-        throw new ForbiddenException('Insufficient permissions to assign roles');
+        throw new ForbiddenException(
+          'Insufficient permissions to assign roles',
+        );
       }
     }
 

@@ -1,8 +1,8 @@
-import { Module, MiddlewareConsumer, NestModule, ValidationPipe } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { APP_PIPE, APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
+import { APP_PIPE, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { join } from 'path';
 import { AppService } from './app.service';
 import { AppResolver } from './app.resolver';
@@ -45,10 +45,12 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
       envFilePath: ['.env.local', '.env'],
     }),
     // Rate limiting
-    ThrottlerModule.forRoot([{
-      ttl: 60000, // 1 minute
-      limit: 100, // 100 requests per minute
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 1 minute
+        limit: 100, // 100 requests per minute
+      },
+    ]),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
@@ -78,7 +80,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     ReportsModule,
   ],
   providers: [
-    AppResolver, 
+    AppResolver,
     AppService,
     // Global validation pipe
     {

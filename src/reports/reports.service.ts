@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -49,7 +49,11 @@ export class ReportsService {
     return [];
   }
 
-  async generateReport(reportId: string, currentUserId: string, parameters: any) {
+  async generateReport(
+    reportId: string,
+    currentUserId: string,
+    parameters: any,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id: reportId,
@@ -59,12 +63,20 @@ export class ReportsService {
     } as any;
   }
 
-  async executeReport(reportId: string, currentUserId: string, format: string, parameters: any) {
+  async executeReport(
+    reportId: string,
+    currentUserId: string,
+    format: string,
+    parameters: any,
+  ) {
     // Stub implementation - replace with actual logic
     return 'report-data';
   }
 
-  async getSalesReports(currentUserId: string, dateRange?: { startDate?: Date; endDate?: Date }) {
+  async getSalesReports(
+    currentUserId: string,
+    dateRange?: { startDate?: Date; endDate?: Date },
+  ) {
     // Stub implementation - replace with actual logic
     return [];
   }
@@ -79,7 +91,11 @@ export class ReportsService {
     return [];
   }
 
-  async update(id: string, updateReportDto: UpdateReportDto, currentUserId: string) {
+  async update(
+    id: string,
+    updateReportDto: UpdateReportDto,
+    currentUserId: string,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id,
@@ -88,7 +104,12 @@ export class ReportsService {
     } as any;
   }
 
-  async scheduleReport(reportId: string, schedule: string, recipients: string[], currentUserId: string) {
+  async scheduleReport(
+    reportId: string,
+    schedule: string,
+    recipients: string[],
+    currentUserId: string,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id: reportId,

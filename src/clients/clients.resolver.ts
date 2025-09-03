@@ -18,11 +18,11 @@ export class ClientsResolver {
     @Args('createClientInput') createClientInput: CreateClientInput,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Creating client', { 
+    this.logger.log('GraphQL: Creating client', {
       userId: context.req.user.sub,
-      client: createClientInput.name 
+      client: createClientInput.name,
     });
-    
+
     return this.clientsService.create(createClientInput, context.req.user.sub);
   }
 
@@ -48,12 +48,16 @@ export class ClientsResolver {
     @Args('updateClientInput') updateClientInput: UpdateClientInput,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Updating client', { 
+    this.logger.log('GraphQL: Updating client', {
       userId: context.req.user.sub,
-      clientId: updateClientInput.id 
+      clientId: updateClientInput.id,
     });
-    
-    return this.clientsService.update(updateClientInput.id, updateClientInput, context.req.user.sub);
+
+    return this.clientsService.update(
+      updateClientInput.id,
+      updateClientInput,
+      context.req.user.sub,
+    );
   }
 
   @Mutation(() => Client)
@@ -61,11 +65,11 @@ export class ClientsResolver {
     @Args('id', { type: () => String }) id: string,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Removing client', { 
+    this.logger.log('GraphQL: Removing client', {
       userId: context.req.user.sub,
-      clientId: id 
+      clientId: id,
     });
-    
+
     return this.clientsService.remove(id, context.req.user.sub);
   }
 }

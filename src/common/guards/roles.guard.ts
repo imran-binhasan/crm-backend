@@ -17,14 +17,14 @@ export class RolesGuard implements CanActivate {
       ROLES_KEY,
       [context.getHandler(), context.getClass()],
     );
-    
+
     if (!requiredRoles) {
       return true;
     }
 
     const ctx = GqlExecutionContext.create(context);
     const { user } = ctx.getContext().req;
-    
+
     return user && user.role && requiredRoles.includes(user.role.name);
   }
 }

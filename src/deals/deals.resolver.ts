@@ -18,11 +18,11 @@ export class DealsResolver {
     @Args('createDealInput') createDealInput: CreateDealInput,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Creating deal', { 
+    this.logger.log('GraphQL: Creating deal', {
       userId: context.req.user.sub,
-      deal: createDealInput.title 
+      deal: createDealInput.title,
     });
-    
+
     return this.dealsService.create(createDealInput, context.req.user.sub);
   }
 
@@ -48,12 +48,16 @@ export class DealsResolver {
     @Args('updateDealInput') updateDealInput: UpdateDealInput,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Updating deal', { 
+    this.logger.log('GraphQL: Updating deal', {
       userId: context.req.user.sub,
-      dealId: updateDealInput.id 
+      dealId: updateDealInput.id,
     });
-    
-    return this.dealsService.update(updateDealInput.id, updateDealInput, context.req.user.sub);
+
+    return this.dealsService.update(
+      updateDealInput.id,
+      updateDealInput,
+      context.req.user.sub,
+    );
   }
 
   @Mutation(() => Deal)
@@ -61,11 +65,11 @@ export class DealsResolver {
     @Args('id', { type: () => String }) id: string,
     @Context() context: any,
   ) {
-    this.logger.log('GraphQL: Removing deal', { 
+    this.logger.log('GraphQL: Removing deal', {
       userId: context.req.user.sub,
-      dealId: id 
+      dealId: id,
     });
-    
+
     return this.dealsService.remove(id, context.req.user.sub);
   }
 }

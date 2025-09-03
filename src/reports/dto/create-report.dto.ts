@@ -1,5 +1,5 @@
 import { InputType, Field } from '@nestjs/graphql';
-import { IsString, IsOptional, IsJSON } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 @InputType()
 export class CreateReportDto {

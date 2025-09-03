@@ -1,5 +1,13 @@
 import { InputType, Field, Int } from '@nestjs/graphql';
-import { IsString, IsOptional, IsDateString, IsEnum, IsInt, Min, IsNotEmpty } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsDateString,
+  IsEnum,
+  IsInt,
+  Min,
+  IsNotEmpty,
+} from 'class-validator';
 
 @InputType()
 export class CreateActivityInput {

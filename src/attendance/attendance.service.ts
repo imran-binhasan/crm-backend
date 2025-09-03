@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
 import { CreateAttendanceDto } from './dto/create-attendance.dto';
@@ -13,7 +13,10 @@ export class AttendanceService {
     private readonly rbacService: RbacService,
   ) {}
 
-  async checkIn(createAttendanceDto: CreateAttendanceDto, currentUserId: string) {
+  async checkIn(
+    createAttendanceDto: CreateAttendanceDto,
+    currentUserId: string,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id: 'stub-id',
@@ -27,7 +30,11 @@ export class AttendanceService {
     } as any;
   }
 
-  async checkOut(attendanceId: string, currentUserId: string, location?: { latitude?: number; longitude?: number }) {
+  async checkOut(
+    attendanceId: string,
+    currentUserId: string,
+    location?: { latitude?: number; longitude?: number },
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id: attendanceId,
@@ -54,12 +61,21 @@ export class AttendanceService {
     } as any;
   }
 
-  async findByEmployee(employeeId: string, currentUserId: string, dateRange?: { startDate?: Date; endDate?: Date }) {
+  async findByEmployee(
+    employeeId: string,
+    currentUserId: string,
+    dateRange?: { startDate?: Date; endDate?: Date },
+  ) {
     // Stub implementation - replace with actual logic
     return [];
   }
 
-  async findByDateRange(startDate: Date, endDate: Date, currentUserId: string, employeeId?: string) {
+  async findByDateRange(
+    startDate: Date,
+    endDate: Date,
+    currentUserId: string,
+    employeeId?: string,
+  ) {
     // Stub implementation - replace with actual logic
     return [];
   }
@@ -69,7 +85,11 @@ export class AttendanceService {
     return [];
   }
 
-  async update(id: string, updateAttendanceDto: UpdateAttendanceDto, currentUserId: string) {
+  async update(
+    id: string,
+    updateAttendanceDto: UpdateAttendanceDto,
+    currentUserId: string,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id,
@@ -78,7 +98,12 @@ export class AttendanceService {
     } as any;
   }
 
-  async approveAttendance(attendanceId: string, approved: boolean, currentUserId: string, notes?: string) {
+  async approveAttendance(
+    attendanceId: string,
+    approved: boolean,
+    currentUserId: string,
+    notes?: string,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id: attendanceId,
@@ -88,7 +113,12 @@ export class AttendanceService {
     } as any;
   }
 
-  async requestOvertime(attendanceId: string, overtimeHours: number, reason: string, currentUserId: string) {
+  async requestOvertime(
+    attendanceId: string,
+    overtimeHours: number,
+    reason: string,
+    currentUserId: string,
+  ) {
     // Stub implementation - replace with actual logic
     return {
       id: attendanceId,

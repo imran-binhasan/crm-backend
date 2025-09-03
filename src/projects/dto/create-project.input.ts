@@ -1,5 +1,15 @@
 import { InputType, Field, Float } from '@nestjs/graphql';
-import { IsString, IsOptional, IsEnum, IsNotEmpty, IsNumber, Min, Max, IsDateString, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  Min,
+  Max,
+  IsDateString,
+  IsArray,
+} from 'class-validator';
 
 @InputType()
 export class CreateProjectInput {

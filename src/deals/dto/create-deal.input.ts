@@ -1,5 +1,14 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsString, IsOptional, IsBoolean, IsUUID, IsNumber, IsDateString, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsUUID,
+  IsNumber,
+  IsDateString,
+  Min,
+  Max,
+} from 'class-validator';
 
 @InputType()
 export class CreateDealInput {

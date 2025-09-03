@@ -1,5 +1,9 @@
 import { SetMetadata } from '@nestjs/common';
-import { ResourceType, ActionType, PermissionCondition } from '../rbac/permission.types';
+import {
+  ResourceType,
+  ActionType,
+  PermissionCondition,
+} from '../rbac/permission.types';
 
 export const PERMISSIONS_KEY = 'permissions';
 export const PERMISSION_CONDITIONS_KEY = 'permission_conditions';
@@ -24,12 +28,22 @@ export const RequireResource = (resource: ResourceType, action: ActionType) =>
   SetMetadata(PERMISSIONS_KEY, [`${resource}:${action}`]);
 
 // Multiple permissions (OR logic)
-export const RequireAnyPermission = (...permissions: PermissionDecoratorOptions[]) =>
-  SetMetadata(PERMISSIONS_KEY, permissions.map(p => `${p.resource}:${p.action}`));
+export const RequireAnyPermission = (
+  ...permissions: PermissionDecoratorOptions[]
+) =>
+  SetMetadata(
+    PERMISSIONS_KEY,
+    permissions.map((p) => `${p.resource}:${p.action}`),
+  );
 
 // Multiple permissions (AND logic)
-export const RequireAllPermissions = (...permissions: PermissionDecoratorOptions[]) =>
-  SetMetadata(PERMISSIONS_KEY, permissions.map(p => `${p.resource}:${p.action}`));
+export const RequireAllPermissions = (
+  ...permissions: PermissionDecoratorOptions[]
+) =>
+  SetMetadata(
+    PERMISSIONS_KEY,
+    permissions.map((p) => `${p.resource}:${p.action}`),
+  );
 
 // Ownership-based permission
 export const RequireOwnership = (resource: ResourceType, action: ActionType) =>

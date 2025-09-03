@@ -13,7 +13,7 @@ export class LoggingMiddleware implements NestMiddleware {
 
     // Log incoming request
     this.logger.log(
-      `🔥 ${method} ${originalUrl} - IP: ${ip} - User-Agent: ${userAgent} - RequestId: ${requestId}`
+      `🔥 ${method} ${originalUrl} - IP: ${ip} - User-Agent: ${userAgent} - RequestId: ${requestId}`,
     );
 
     // Log response when it finishes
@@ -21,9 +21,9 @@ export class LoggingMiddleware implements NestMiddleware {
       const duration = Date.now() - start;
       const { statusCode } = res;
       const statusEmoji = statusCode >= 400 ? '❌' : '✅';
-      
+
       this.logger.log(
-        `${statusEmoji} ${method} ${originalUrl} ${statusCode} - ${duration}ms - RequestId: ${requestId}`
+        `${statusEmoji} ${method} ${originalUrl} ${statusCode} - ${duration}ms - RequestId: ${requestId}`,
       );
     });
 

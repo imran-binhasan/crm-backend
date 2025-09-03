@@ -1,5 +1,12 @@
 import { Field, InputType } from '@nestjs/graphql';
-import { IsString, IsOptional, IsBoolean, IsUUID, IsNumber, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsUUID,
+  IsNumber,
+  IsDateString,
+} from 'class-validator';
 
 @InputType()
 export class CreateLeadInput {

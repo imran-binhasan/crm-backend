@@ -23,14 +23,14 @@ export class CustomValidationPipe implements PipeTransform<any> {
     if (errors.length > 0) {
       const errorMessages = this.buildErrorMessages(errors);
       this.logger.warn('Validation failed:', errorMessages);
-      
+
       throw new BadRequestException({
         message: 'Validation failed',
         errors: errorMessages,
         statusCode: 400,
       });
     }
-    
+
     return value;
   }
 
@@ -41,18 +41,20 @@ export class CustomValidationPipe implements PipeTransform<any> {
 
   private buildErrorMessages(errors: ValidationError[]): string[] {
     const messages: string[] = [];
-    
+
     errors.forEach((error) => {
       if (error.constraints) {
         messages.push(...Object.values(error.constraints));
       }
-      
+
       if (error.children && error.children.length > 0) {
         const childMessages = this.buildErrorMessages(error.children);
-        messages.push(...childMessages.map(msg => `${error.property}.${msg}`));
+        messages.push(
+          ...childMessages.map((msg) => `${error.property}.${msg}`),
+        );
       }
     });
-    
+
     return messages;
   }
 }
