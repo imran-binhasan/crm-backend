@@ -1,107 +1,364 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { BaseService } from '../common/services/base.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
-import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
+import { CreateReportInput } from './dto/create-report.input';
+import { UpdateReportInput } from './dto/update-report.input';
+import { Report } from './entities/report.entity';
+import { ReportMapper } from './mappers/report.mapper';
+import { ResourceType } from '../common/rbac/permission.types';
 
 @Injectable()
-export class ReportsService {
-  private readonly logger = new Logger(ReportsService.name);
+export class ReportsService extends BaseService<
+  Report,
+  CreateReportInput,
+  UpdateReportInput
+> {
+  protected readonly resourceType = ResourceType.REPORT;
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly rbacService: RbacService,
-  ) {}
+    prisma: PrismaService,
+    rbacService: RbacService,
+  ) {
+    super(prisma, rbacService, ReportsService.name);
+  }
 
-  async create(createReportDto: CreateReportDto, currentUserId: string) {
-    // Stub implementation - replace with actual logic
-    return {
-      id: 'stub-report-id',
-      ...createReportDto,
+  protected mapToDomain(prismaEntity: any): Report {
+    return ReportMapper.toDomain(prismaEntity);
+  }
+
+  protected async performCreate(data: CreateReportInput, currentUserId: string): Promise<Report> {
+    const reportData = {
+      name: data.name,
+      description: data.description,
+      type: data.type as any,
+      format: data.format as any || 'PDF',
+      status: 'PENDING' as any,
+      startDate: data.startDate ? new Date(data.startDate) : null,
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      filters: data.filters || [],
+      columns: data.columns || [],
+      query: data.query,
+      isScheduled: data.isScheduled || false,
+      schedulePattern: data.schedulePattern,
+      emailOnCompletion: data.emailOnCompletion || false,
+      emailRecipients: data.emailRecipients || [],
       createdById: currentUserId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any;
+    };
+
+    const result = await this.prisma.report.create({
+      data: reportData as any,
+      include: this.getIncludeOptions(),
+    });
+
+    return this.mapToDomain(result);
   }
 
-  async findAll(currentUserId: string) {
-    return [];
+  protected async performFindMany(options: any): Promise<Report[]> {
+    const result = await this.prisma.report.findMany({
+      ...options,
+      include: this.getIncludeOptions(),
+    });
+
+    return result.map(report => this.mapToDomain(report));
   }
 
-  async findOne(id: string, currentUserId: string) {
-    // Stub implementation - replace with actual logic
+  protected async performFindUnique(id: string): Promise<Report | null> {
+    const result = await this.prisma.report.findUnique({
+      where: { id, deletedAt: null },
+      include: this.getIncludeOptions(),
+    });
+
+    return result ? this.mapToDomain(result) : null;
+  }
+
+  protected async performUpdate(id: string, data: UpdateReportInput, currentUserId: string): Promise<Report> {
+    const { id: _, ...updateData } = data;
+
+    const processedData: any = {
+      ...updateData,
+      startDate: data.startDate ? new Date(data.startDate) : updateData.startDate,
+      endDate: data.endDate ? new Date(data.endDate) : updateData.endDate,
+    };
+
+    const result = await this.prisma.report.update({
+      where: { id },
+      data: processedData,
+      include: this.getIncludeOptions(),
+    });
+
+    return this.mapToDomain(result);
+  }
+
+  protected async performSoftDelete(id: string, currentUserId: string): Promise<void> {
+    await this.prisma.report.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  protected async performHardDelete(id: string): Promise<void> {
+    await this.prisma.report.delete({
+      where: { id },
+    });
+  }
+
+  protected async performCount(options: any): Promise<number> {
+    return this.prisma.report.count(options);
+  }
+
+  private getIncludeOptions() {
     return {
-      id,
-      name: 'Sample Report',
-      type: 'SALES',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as any;
+      createdBy: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+    };
   }
 
-  async findByType(type: string, currentUserId: string) {
-    // Stub implementation - replace with actual logic
-    return [];
+  // Business methods
+  async getReportsByType(
+    type: string,
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Report[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const reports = await this.prisma.report.findMany({
+      where: { 
+        type: type as any,
+        deletedAt: null,
+        ...filters,
+      },
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return reports.map(report => this.mapToDomain(report));
   }
 
-  async findScheduled(currentUserId: string) {
-    // Stub implementation - replace with actual logic
-    return [];
+  async getReportsByStatus(
+    status: string,
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Report[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const reports = await this.prisma.report.findMany({
+      where: { 
+        status: status as any,
+        deletedAt: null,
+        ...filters,
+      },
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return reports.map(report => this.mapToDomain(report));
+  }
+
+  async getScheduledReports(
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Report[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const reports = await this.prisma.report.findMany({
+      where: { 
+        isScheduled: true,
+        deletedAt: null,
+        ...filters,
+      },
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { nextRunAt: 'asc' },
+    });
+
+    return reports.map(report => this.mapToDomain(report));
+  }
+
+  async getPendingReports(
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Report[]> {
+    return this.getReportsByStatus('PENDING', currentUserId, take, skip);
+  }
+
+  async getCompletedReports(
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Report[]> {
+    return this.getReportsByStatus('COMPLETED', currentUserId, take, skip);
   }
 
   async generateReport(
     reportId: string,
     currentUserId: string,
-    parameters: any,
-  ) {
-    // Stub implementation - replace with actual logic
-    return {
-      id: reportId,
-      status: 'GENERATED',
-      lastGeneratedAt: new Date(),
-      updatedAt: new Date(),
-    } as any;
+    parameters?: any,
+  ): Promise<Report> {
+    // Update status to generating
+    const report = await this.prisma.report.update({
+      where: { id: reportId },
+      data: { 
+        status: 'GENERATING' as any,
+        lastRunAt: new Date(),
+      },
+      include: this.getIncludeOptions(),
+    });
+
+    try {
+      // Here you would implement the actual report generation logic
+      // For now, we'll simulate it by updating the status to completed
+      const completedReport = await this.prisma.report.update({
+        where: { id: reportId },
+        data: { 
+          status: 'COMPLETED' as any,
+          generatedAt: new Date(),
+          // In real implementation, you would set filePath and fileUrl
+        },
+        include: this.getIncludeOptions(),
+      });
+
+      return this.mapToDomain(completedReport);
+    } catch (error) {
+      // Update status to failed with error message
+      const failedReport = await this.prisma.report.update({
+        where: { id: reportId },
+        data: { 
+          status: 'FAILED' as any,
+          errorMessage: error.message,
+        },
+        include: this.getIncludeOptions(),
+      });
+
+      return this.mapToDomain(failedReport);
+    }
   }
 
   async executeReport(
     reportId: string,
     currentUserId: string,
-    format: string,
-    parameters: any,
-  ) {
-    // Stub implementation - replace with actual logic
-    return 'report-data';
+    format?: string,
+    parameters?: any,
+  ): Promise<string> {
+    const report = await this.findOne(reportId, currentUserId);
+    
+    // Here you would implement the actual report execution logic
+    // This would generate the report data based on the report type and parameters
+    
+    // For now, return a mock response
+    return 'report-execution-result';
   }
 
   async getSalesReports(
     currentUserId: string,
     dateRange?: { startDate?: Date; endDate?: Date },
-  ) {
-    // Stub implementation - replace with actual logic
-    return [];
+    take?: number,
+    skip?: number,
+  ): Promise<Report[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const whereClause: any = {
+      type: 'SALES',
+      deletedAt: null,
+      ...filters,
+    };
+
+    if (dateRange?.startDate) {
+      whereClause.startDate = { gte: dateRange.startDate };
+    }
+    if (dateRange?.endDate) {
+      whereClause.endDate = { lte: dateRange.endDate };
+    }
+
+    const reports = await this.prisma.report.findMany({
+      where: whereClause,
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return reports.map(report => this.mapToDomain(report));
   }
 
-  async getProjectReports(currentUserId: string, projectId?: string) {
-    // Stub implementation - replace with actual logic
-    return [];
-  }
-
-  async getFinancialReports(currentUserId: string, period: string) {
-    // Stub implementation - replace with actual logic
-    return [];
-  }
-
-  async update(
-    id: string,
-    updateReportDto: UpdateReportDto,
+  async getProjectReports(
     currentUserId: string,
-  ) {
-    // Stub implementation - replace with actual logic
-    return {
-      id,
-      ...updateReportDto,
-      updatedAt: new Date(),
-    } as any;
+    projectId?: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Report[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const whereClause: any = {
+      type: 'PROJECT',
+      deletedAt: null,
+      ...filters,
+    };
+
+    // If projectId is provided, you would add it to filters
+    // This would require extending the Report model to include projectId
+    // For now, we'll just filter by type
+
+    const reports = await this.prisma.report.findMany({
+      where: whereClause,
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return reports.map(report => this.mapToDomain(report));
+  }
+
+  async getFinancialReports(
+    currentUserId: string,
+    period?: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Report[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const reports = await this.prisma.report.findMany({
+      where: { 
+        type: 'FINANCIAL',
+        deletedAt: null,
+        ...filters,
+      },
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return reports.map(report => this.mapToDomain(report));
   }
 
   async scheduleReport(
@@ -109,24 +366,48 @@ export class ReportsService {
     schedule: string,
     recipients: string[],
     currentUserId: string,
-  ) {
-    // Stub implementation - replace with actual logic
-    return {
-      id: reportId,
-      schedule,
-      recipients,
-      isScheduled: true,
-      updatedAt: new Date(),
-    } as any;
+  ): Promise<Report> {
+    const report = await this.prisma.report.update({
+      where: { id: reportId },
+      data: { 
+        isScheduled: true,
+        schedulePattern: schedule,
+        emailRecipients: recipients,
+        emailOnCompletion: true,
+        // You would calculate nextRunAt based on the cron pattern
+        nextRunAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // Next day for demo
+      },
+      include: this.getIncludeOptions(),
+    });
+
+    return this.mapToDomain(report);
   }
 
-  async remove(id: string, currentUserId: string) {
-    // Stub implementation - replace with actual logic
-    throw new Error('Method not implemented');
+  async updateReportStatus(
+    id: string,
+    status: string,
+    currentUserId: string,
+  ): Promise<Report> {
+    const report = await this.prisma.report.update({
+      where: { id },
+      data: { status: status as any },
+      include: this.getIncludeOptions(),
+    });
+
+    return this.mapToDomain(report);
   }
 
-  async exportReport(reportId: string, format: string, currentUserId: string) {
-    // Stub implementation - replace with actual logic
-    return 'export-url';
+  async exportReport(
+    reportId: string,
+    format: string,
+    currentUserId: string,
+  ): Promise<string> {
+    const report = await this.findOne(reportId, currentUserId);
+    
+    // Here you would implement the actual export logic
+    // This would convert the report data to the requested format
+    
+    // For now, return a mock URL
+    return `http://localhost:3000/api/reports/${reportId}/export?format=${format}`;
   }
 }

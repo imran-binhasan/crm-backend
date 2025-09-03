@@ -1,6 +1,7 @@
 import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
 import { Employee } from '../../employees/entities/employee.entity';
 import { User } from '../../users/entities/user.entity';
+import { AttendanceStatus, ApprovalStatus } from '../dto/create-attendance.input';
 
 @ObjectType()
 export class Attendance {
@@ -22,8 +23,8 @@ export class Attendance {
   @Field(() => Float, { nullable: true })
   breakTime?: number; // in minutes
 
-  @Field(() => String)
-  status: string; // PRESENT, ABSENT, LATE, HALF_DAY, WORK_FROM_HOME
+  @Field(() => AttendanceStatus)
+  status: AttendanceStatus;
 
   @Field(() => String, { nullable: true })
   workLocation?: string;
@@ -73,8 +74,8 @@ export class Attendance {
   @Field(() => Date, { nullable: true })
   approvedAt?: Date;
 
-  @Field(() => String, { defaultValue: 'PENDING' })
-  approvalStatus: string; // PENDING, APPROVED, REJECTED
+  @Field(() => ApprovalStatus, { defaultValue: ApprovalStatus.PENDING })
+  approvalStatus: ApprovalStatus;
 
   // System fields
   @Field(() => String, { nullable: true })

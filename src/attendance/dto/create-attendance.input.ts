@@ -1,4 +1,4 @@
-import { InputType, Field, Float } from '@nestjs/graphql';
+import { InputType, Field, Float, registerEnumType } from '@nestjs/graphql';
 import {
   IsString,
   IsOptional,
@@ -9,6 +9,31 @@ import {
   IsDateString,
   IsBoolean,
 } from 'class-validator';
+
+// Register GraphQL Enums
+export enum AttendanceStatus {
+  PRESENT = 'PRESENT',
+  ABSENT = 'ABSENT',
+  LATE = 'LATE',
+  HALF_DAY = 'HALF_DAY',
+  WORK_FROM_HOME = 'WORK_FROM_HOME',
+}
+
+export enum ApprovalStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
+
+registerEnumType(AttendanceStatus, {
+  name: 'AttendanceStatus',
+  description: 'The attendance status of an employee',
+});
+
+registerEnumType(ApprovalStatus, {
+  name: 'ApprovalStatus',
+  description: 'The approval status of an attendance record',
+});
 
 @InputType()
 export class CreateAttendanceInput {
@@ -39,10 +64,10 @@ export class CreateAttendanceInput {
   @IsOptional()
   breakTime?: number;
 
-  @Field(() => String)
-  @IsEnum(['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'WORK_FROM_HOME'])
+  @Field(() => AttendanceStatus)
+  @IsEnum(AttendanceStatus)
   @IsNotEmpty()
-  status: string;
+  status: AttendanceStatus;
 
   @Field(() => String, { nullable: true })
   @IsString()
@@ -105,8 +130,8 @@ export class CreateAttendanceInput {
   @IsOptional()
   approvedById?: string;
 
-  @Field(() => String, { defaultValue: 'PENDING' })
-  @IsEnum(['PENDING', 'APPROVED', 'REJECTED'])
+  @Field(() => ApprovalStatus, { defaultValue: ApprovalStatus.PENDING })
+  @IsEnum(ApprovalStatus)
   @IsOptional()
-  approvalStatus?: string;
+  approvalStatus?: ApprovalStatus;
 }

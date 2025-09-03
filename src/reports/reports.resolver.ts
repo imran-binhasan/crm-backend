@@ -1,9 +1,9 @@
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
 import { UseGuards } from '@nestjs/common';
 import { ReportsService } from './reports.service';
 import { Report } from './entities/report.entity';
-import { CreateReportDto } from './dto/create-report.dto';
-import { UpdateReportDto } from './dto/update-report.dto';
+import { CreateReportInput } from './dto/create-report.input';
+import { UpdateReportInput } from './dto/update-report.input';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionGuard } from '../common/guards/permission.guard';
 import { RequireResource } from '../common/decorators/permissions.decorator';
@@ -19,16 +19,22 @@ export class ReportsResolver {
   @Mutation(() => Report)
   @RequireResource(ResourceType.REPORT, ActionType.CREATE)
   async createReport(
-    @Args('createReportDto') createReportDto: CreateReportDto,
+    @Args('createReportInput') createReportInput: CreateReportInput,
     @CurrentUser() user: User,
   ): Promise<Report> {
-    return this.reportsService.create(createReportDto, user.id);
+    return this.reportsService.create(createReportInput, user.id);
   }
 
   @Query(() => [Report], { name: 'reports' })
   @RequireResource(ResourceType.REPORT, ActionType.READ)
-  async findAll(@CurrentUser() user: User): Promise<Report[]> {
-    return this.reportsService.findAll(user.id);
+  async findAll(
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
+  ): Promise<Report[]> {
+    const pagination = take ? { page: Math.floor((skip || 0) / take) + 1, limit: take } : undefined;
+    const result = await this.reportsService.findAll(user!.id, pagination);
+    return result.data;
   }
 
   @Query(() => Report, { name: 'report' })
@@ -44,15 +50,52 @@ export class ReportsResolver {
   @RequireResource(ResourceType.REPORT, ActionType.READ)
   async findByType(
     @Args('type') type: string,
-    @CurrentUser() user: User,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
   ): Promise<Report[]> {
-    return this.reportsService.findByType(type, user.id);
+    return this.reportsService.getReportsByType(type, user!.id, take, skip);
+  }
+
+  @Query(() => [Report], { name: 'reportsByStatus' })
+  @RequireResource(ResourceType.REPORT, ActionType.READ)
+  async findByStatus(
+    @Args('status') status: string,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
+  ): Promise<Report[]> {
+    return this.reportsService.getReportsByStatus(status, user!.id, take, skip);
   }
 
   @Query(() => [Report], { name: 'scheduledReports' })
   @RequireResource(ResourceType.REPORT, ActionType.READ)
-  async findScheduled(@CurrentUser() user: User): Promise<Report[]> {
-    return this.reportsService.findScheduled(user.id);
+  async findScheduled(
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
+  ): Promise<Report[]> {
+    return this.reportsService.getScheduledReports(user!.id, take, skip);
+  }
+
+  @Query(() => [Report], { name: 'pendingReports' })
+  @RequireResource(ResourceType.REPORT, ActionType.READ)
+  async findPending(
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
+  ): Promise<Report[]> {
+    return this.reportsService.getPendingReports(user!.id, take, skip);
+  }
+
+  @Query(() => [Report], { name: 'completedReports' })
+  @RequireResource(ResourceType.REPORT, ActionType.READ)
+  async findCompleted(
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
+  ): Promise<Report[]> {
+    return this.reportsService.getCompletedReports(user!.id, take, skip);
   }
 
   @Mutation(() => Report)
@@ -91,21 +134,25 @@ export class ReportsResolver {
   async getSalesReports(
     @Args('startDate', { type: () => Date, nullable: true }) startDate?: Date,
     @Args('endDate', { type: () => Date, nullable: true }) endDate?: Date,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
     @CurrentUser() user?: User,
   ): Promise<Report[]> {
     return this.reportsService.getSalesReports(user!.id, {
       startDate,
       endDate,
-    });
+    }, take, skip);
   }
 
   @Query(() => [Report], { name: 'projectReports' })
   @RequireResource(ResourceType.REPORT, ActionType.READ)
   async getProjectReports(
     @Args('projectId', { type: () => ID, nullable: true }) projectId?: string,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
     @CurrentUser() user?: User,
   ): Promise<Report[]> {
-    return this.reportsService.getProjectReports(user!.id, projectId);
+    return this.reportsService.getProjectReports(user!.id, projectId, take, skip);
   }
 
   @Query(() => [Report], { name: 'financialReports' })
@@ -113,19 +160,30 @@ export class ReportsResolver {
   async getFinancialReports(
     @Args('period', { type: () => String, defaultValue: 'monthly' })
     period: string,
-    @CurrentUser() user: User,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @CurrentUser() user?: User,
   ): Promise<Report[]> {
-    return this.reportsService.getFinancialReports(user.id, period);
+    return this.reportsService.getFinancialReports(user!.id, period, take, skip);
   }
 
   @Mutation(() => Report)
   @RequireResource(ResourceType.REPORT, ActionType.UPDATE)
   async updateReport(
-    @Args('id', { type: () => ID }) id: string,
-    @Args('updateReportDto') updateReportDto: UpdateReportDto,
+    @Args('updateReportInput') updateReportInput: UpdateReportInput,
     @CurrentUser() user: User,
   ): Promise<Report> {
-    return this.reportsService.update(id, updateReportDto, user.id);
+    return this.reportsService.update(updateReportInput.id, updateReportInput, user.id);
+  }
+
+  @Mutation(() => Report)
+  @RequireResource(ResourceType.REPORT, ActionType.UPDATE)
+  async updateReportStatus(
+    @Args('id', { type: () => ID }) id: string,
+    @Args('status', { type: () => String }) status: string,
+    @CurrentUser() user: User,
+  ): Promise<Report> {
+    return this.reportsService.updateReportStatus(id, status, user.id);
   }
 
   @Mutation(() => Report)
@@ -155,7 +213,7 @@ export class ReportsResolver {
   }
 
   @Mutation(() => String)
-  @RequireResource(ResourceType.REPORT, ActionType.EXPORT)
+  @RequireResource(ResourceType.REPORT, ActionType.READ)
   async exportReport(
     @Args('reportId', { type: () => ID }) reportId: string,
     @Args('format', { type: () => String, defaultValue: 'PDF' }) format: string,
