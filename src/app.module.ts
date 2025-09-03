@@ -55,19 +55,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
       playground: process.env.NODE_ENV !== 'production',
       introspection: process.env.NODE_ENV !== 'production',
       context: ({ req }) => ({ req }),
-      formatError: (error) => {
-        // Don't expose internal errors in production
-        if (process.env.NODE_ENV === 'production') {
-          if (
-            error.extensions &&
-            error.extensions.exception &&
-            Object.prototype.hasOwnProperty.call(error.extensions.exception, 'stacktrace')
-          ) {
-            delete (error.extensions.exception as { stacktrace?: unknown }).stacktrace;
-          }
-        }
-        return error;
-      },
+      sortSchema: true,
     }),
     PrismaModule,
     RbacModule,
