@@ -8,6 +8,11 @@ export enum ResourceType {
   DEAL = 'deal',
   ACTIVITY = 'activity',
   NOTE = 'note',
+  CLIENT = 'client',
+  PROJECT = 'project',
+  EMPLOYEE = 'employee',
+  ATTENDANCE = 'attendance',
+  INVOICE = 'invoice',
   DASHBOARD = 'dashboard',
   REPORT = 'report',
 }
