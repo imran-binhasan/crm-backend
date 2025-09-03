@@ -26,6 +26,7 @@ import { EmployeesModule } from './employees/employees.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { ReportsModule } from './reports/reports.module';
+import { UploadModule } from './upload/upload.module';
 
 // Middleware
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -78,6 +79,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     AttendanceModule,
     InvoicesModule,
     ReportsModule,
+    UploadModule,
   ],
   providers: [
     AppResolver,

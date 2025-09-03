@@ -1,7 +1,8 @@
 import { ObjectType, Field, ID, Float, Int } from '@nestjs/graphql';
 import { User } from '../../users/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { ProjectStatus, Priority, ProjectType } from '../dto/create-project.input';
+import { ProjectStatus, ProjectType } from '../dto/create-project.input';
+import { Priority } from '../../common/enums/priority.enum';
 
 @ObjectType()
 export class Project {

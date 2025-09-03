@@ -1,0 +1,1437 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+"""Available action types for permissions"""
+enum ActionType {
+  ASSIGN
+  BULK_DELETE
+  BULK_EDIT
+  CREATE
+  DELETE
+  EXPORT
+  IMPORT
+  MANAGE
+  READ
+  UNASSIGN
+  UPDATE
+}
+
+type Activity {
+  assignedTo: User
+  assignedToId: String
+  company: Company
+  companyId: String
+  completedAt: DateTime
+  contact: Contact
+  contactId: String
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  deal: Deal
+  dealId: String
+  deletedAt: DateTime
+  description: String
+  id: ID!
+  lead: Lead
+  leadId: String
+  priority: String!
+  scheduledAt: DateTime
+  status: String!
+  subject: String!
+  type: String!
+  updatedAt: DateTime!
+}
+
+"""Activity status values"""
+enum ActivityStatus {
+  CANCELLED
+  COMPLETED
+  IN_PROGRESS
+  SCHEDULED
+}
+
+"""Activity type values"""
+enum ActivityType {
+  CALL
+  DEMO
+  EMAIL
+  FOLLOW_UP
+  MEETING
+  NOTE
+  TASK
+}
+
+"""The approval status of an attendance record"""
+enum ApprovalStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+type Attendance {
+  approvalStatus: ApprovalStatus!
+  approvedAt: DateTime
+  approvedBy: User
+  approvedById: String
+  breakTime: Float
+  checkIn: DateTime
+  checkOut: DateTime
+  createdAt: DateTime!
+  createdBy: User
+  createdById: String
+  date: DateTime!
+  deletedAt: DateTime
+  employee: Employee!
+  employeeId: String!
+  hoursWorked: Float
+  id: ID!
+  ipAddress: String
+  isHoliday: Boolean!
+  isOvertime: Boolean!
+  isWeekend: Boolean!
+  latitude: Float
+  longitude: Float
+  notes: String
+  overtimeHours: Float
+  reasonForAbsence: String
+  status: AttendanceStatus!
+  updatedAt: DateTime!
+  workLocation: String
+}
+
+"""The attendance status of an employee"""
+enum AttendanceStatus {
+  ABSENT
+  HALF_DAY
+  LATE
+  PRESENT
+  WORK_FROM_HOME
+}
+
+type AuthResponse {
+  accessToken: String!
+  refreshToken: String!
+  user: User!
+}
+
+type Client {
+  accountManager: User
+  accountManagerId: String
+  billingAddress: String
+  code: String
+  company: Company
+  companyId: String
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  deletedAt: DateTime
+  description: String
+  email: String
+  id: ID!
+  industry: String
+  name: String!
+  notes: String
+  paymentTerms: Int!
+  phone: String
+  preferredCurrency: String
+  primaryContact: Contact
+  primaryContactId: String
+  shippingAddress: String
+  status: ClientStatus!
+  taxId: String
+  type: ClientType!
+  updatedAt: DateTime!
+  website: String
+}
+
+"""Client status"""
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+"""Client type classification"""
+enum ClientType {
+  CORPORATE
+  INDIVIDUAL
+}
+
+type Company {
+  assignedTo: User
+  assignedToId: ID
+  city: String
+  country: String
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  deletedAt: DateTime
+  email: String
+  id: ID!
+  industry: String
+  isActive: Boolean!
+  linkedinUrl: String
+  name: String!
+  phone: String
+  revenue: Float
+  size: String
+  state: String
+  status: String!
+  street: String
+  twitterUrl: String
+  updatedAt: DateTime!
+  website: String
+  zipCode: String
+}
+
+"""Company size values"""
+enum CompanySize {
+  ENTERPRISE
+  LARGE
+  MEDIUM
+  SMALL
+  STARTUP
+}
+
+"""Company status values"""
+enum CompanyStatus {
+  ACTIVE
+  CLIENT
+  FORMER_CLIENT
+  INACTIVE
+  PROSPECT
+}
+
+type Contact {
+  assignedTo: User
+  assignedToId: ID
+  city: String
+  companyId: ID
+  country: String
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  deletedAt: DateTime
+  department: String
+  email: String
+  firstName: String!
+  id: ID!
+  isActive: Boolean!
+  jobTitle: String
+  lastName: String!
+  linkedinUrl: String
+  mobile: String
+  phone: String
+  source: String
+  state: String
+  status: String!
+  street: String
+  twitterUrl: String
+  updatedAt: DateTime!
+  websiteUrl: String
+  zipCode: String
+}
+
+"""Contact source values"""
+enum ContactSource {
+  COLD_CALL
+  EMAIL_CAMPAIGN
+  OTHER
+  PARTNER
+  REFERRAL
+  SOCIAL_MEDIA
+  TRADE_SHOW
+  WEBSITE
+}
+
+"""Contact status values"""
+enum ContactStatus {
+  ACTIVE
+  CONVERTED
+  INACTIVE
+  QUALIFIED
+  UNQUALIFIED
+}
+
+input CreateActivityInput {
+  assignedToId: String
+  companyId: String
+  contactId: String
+  dealId: String
+  description: String
+  duration: Int! = 0
+  followUpAction: String
+  followUpDate: DateTime
+  leadId: String
+  location: String
+  outcome: String
+  priority: Priority! = MEDIUM
+  scheduledAt: DateTime
+  status: ActivityStatus! = SCHEDULED
+  subject: String!
+  type: ActivityType!
+}
+
+input CreateAttendanceInput {
+  approvalStatus: ApprovalStatus! = PENDING
+  approvedById: String
+  breakTime: Float
+  checkIn: String
+  checkOut: String
+  date: String!
+  employeeId: String!
+  hoursWorked: Float
+  ipAddress: String
+  isHoliday: Boolean! = false
+  isOvertime: Boolean! = false
+  isWeekend: Boolean! = false
+  latitude: Float
+  longitude: Float
+  notes: String
+  overtimeHours: Float
+  reasonForAbsence: String
+  status: AttendanceStatus!
+  workLocation: String
+}
+
+input CreateClientInput {
+  accountManagerId: String
+  billingAddress: String
+  code: String
+  companyId: String
+  description: String
+  email: String
+  industry: String
+  name: String!
+  notes: String
+  paymentTerms: Int! = 30
+  phone: String
+  preferredCurrency: String = "USD"
+  primaryContactId: String
+  shippingAddress: String
+  status: ClientStatus! = ACTIVE
+  taxId: String
+  type: ClientType!
+  website: String
+}
+
+input CreateCompanyInput {
+  assignedToId: String
+  city: String
+  country: String
+  email: String
+  industry: String
+  isActive: Boolean
+  linkedinUrl: String
+  name: String!
+  phone: String
+  revenue: Float
+  size: CompanySize
+  state: String
+  status: CompanyStatus
+  street: String
+  twitterUrl: String
+  website: String
+  zipCode: String
+}
+
+input CreateContactInput {
+  assignedToId: String
+  city: String
+  companyId: String
+  country: String
+  department: String
+  email: String
+  firstName: String!
+  isActive: Boolean
+  jobTitle: String
+  lastName: String!
+  linkedinUrl: String
+  mobile: String
+  phone: String
+  source: ContactSource
+  state: String
+  status: ContactStatus
+  street: String
+  twitterUrl: String
+  websiteUrl: String
+  zipCode: String
+}
+
+input CreateDealInput {
+  actualCloseDate: String
+  assignedToId: String
+  companyId: String
+  contactId: String
+  description: String
+  expectedCloseDate: String
+  isActive: Boolean = true
+  leadId: String
+  priority: String
+  probability: Float
+  stage: String
+  title: String!
+  value: Float!
+}
+
+input CreateEmployeeInput {
+  address: String
+  dateOfBirth: String
+  department: String!
+  email: String
+  emergencyContact: String
+  emergencyPhone: String
+  employmentType: EmploymentType! = FULL_TIME
+  firstName: String!
+  gender: Gender
+  hireDate: String!
+  lastName: String!
+  managerId: ID
+  maritalStatus: MaritalStatus
+  personalEmail: String
+  phone: String
+  position: String!
+  salary: Float
+  salaryType: SalaryType
+  status: EmployeeStatus! = ACTIVE
+  terminationDate: String
+  userId: ID
+  weeklyHours: Int! = 40
+  workLocation: WorkLocation
+}
+
+input CreateInvoiceDto {
+  clientId: String!
+  currency: String
+  description: String
+  discountAmount: Float
+  dueDate: String!
+  exchangeRate: Float
+  issueDate: String!
+  items: [CreateInvoiceItemDto!]!
+  notes: String
+  paymentMethod: String
+  paymentReference: String
+  projectId: String
+  status: InvoiceStatus
+  taxAmount: Float
+  terms: String
+}
+
+input CreateInvoiceItemDto {
+  description: String!
+  quantity: Float!
+  taxAmount: Float
+  taxRate: Float
+  unitPrice: Float!
+}
+
+input CreateLeadInput {
+  assignedToId: String
+  companyId: String
+  contactId: String
+  description: String
+  expectedCloseDate: String
+  isActive: Boolean = true
+  priority: String
+  source: String
+  status: String
+  title: String!
+  value: Float
+}
+
+input CreateNoteInput {
+  companyId: ID
+  contactId: ID
+  content: String!
+  dealId: ID
+  isPrivate: Boolean! = false
+  leadId: ID
+}
+
+input CreatePermissionInput {
+  action: ActionType!
+  description: String
+  resource: ResourceType!
+}
+
+input CreateProjectInput {
+  actualCost: Float
+  actualEndDate: String
+  actualStartDate: String
+  budget: Float
+  clientId: String!
+  code: String
+  currency: String = "USD"
+  description: String
+  endDate: String
+  name: String!
+  priority: Priority! = MEDIUM
+  progress: Float! = 0
+  projectManagerId: String
+  startDate: String
+  status: ProjectStatus! = PLANNING
+  teamMemberIds: [String!]! = []
+  type: ProjectType
+}
+
+input CreateReportFilterInput {
+  field: String!
+  operator: String!
+  value: String!
+}
+
+input CreateReportInput {
+  columns: [String!]! = []
+  description: String
+  emailOnCompletion: Boolean! = false
+  emailRecipients: [String!]! = []
+  endDate: String
+  filters: [CreateReportFilterInput!]! = []
+  format: ReportFormat! = PDF
+  isScheduled: Boolean! = false
+  name: String!
+  query: String
+  schedulePattern: String
+  startDate: String
+  type: ReportType!
+}
+
+input CreateRoleInput {
+  description: String
+  isActive: Boolean! = true
+  name: String!
+  permissionIds: [String!]
+}
+
+input CreateUserInput {
+  email: String!
+  firstName: String!
+  image: String
+  isActive: Boolean! = true
+  lastName: String!
+  password: String!
+  phone: String
+  roleId: String!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Deal {
+  actualCloseDate: DateTime
+  assignedTo: User
+  assignedToId: ID
+  companyId: ID
+  contactId: ID
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  deletedAt: DateTime
+  description: String
+  expectedCloseDate: DateTime
+  id: ID!
+  isActive: Boolean!
+  leadId: ID
+  priority: String!
+  probability: Float!
+  stage: String!
+  title: String!
+  updatedAt: DateTime!
+  value: Float!
+}
+
+input DeleteFileInput {
+  publicId: String!
+}
+
+type Employee {
+  address: String
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  dateOfBirth: DateTime
+  deletedAt: DateTime
+  department: String!
+  directReports: [Employee!]
+  email: String
+  emergencyContact: String
+  emergencyPhone: String
+  employeeId: String!
+  employmentType: EmploymentType!
+  firstName: String!
+  gender: Gender
+  hireDate: DateTime!
+  id: ID!
+  lastName: String!
+  manager: Employee
+  managerId: ID
+  maritalStatus: MaritalStatus
+  personalEmail: String
+  phone: String
+  position: String!
+  salary: Float
+  salaryType: SalaryType
+  status: EmployeeStatus!
+  terminationDate: DateTime
+  updatedAt: DateTime!
+  user: User
+  userId: ID
+  weeklyHours: Int!
+  workLocation: WorkLocation
+}
+
+"""The current status of an employee"""
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+"""The employment type of an employee"""
+enum EmploymentType {
+  CONTRACT
+  FULL_TIME
+  INTERN
+  PART_TIME
+}
+
+input FileUploadInput {
+  entityId: ID!
+  entityType: UploadEntityType!
+  fileName: String
+  subType: String
+}
+
+"""Gender options"""
+enum Gender {
+  FEMALE
+  MALE
+  OTHER
+}
+
+type Invoice {
+  balanceAmount: Float!
+  client: Client
+  clientId: String!
+  createdAt: DateTime!
+  createdBy: User
+  createdById: String!
+  currency: String
+  deletedAt: DateTime
+  description: String
+  discountAmount: Float
+  dueDate: DateTime!
+  exchangeRate: Float
+  id: ID!
+  invoiceNumber: String!
+  issueDate: DateTime!
+  items: [InvoiceItem!]!
+  notes: String
+  paidAmount: Float
+  paidDate: DateTime
+  paymentMethod: String
+  paymentReference: String
+  project: Project
+  projectId: String
+  status: String!
+  subtotal: Float!
+  taxAmount: Float
+  terms: String
+  totalAmount: Float!
+  updatedAt: DateTime!
+}
+
+type InvoiceItem {
+  description: String!
+  id: ID!
+  quantity: Float!
+  taxAmount: Float
+  taxRate: Float
+  totalPrice: Float!
+  unitPrice: Float!
+}
+
+"""The status of an invoice"""
+enum InvoiceStatus {
+  CANCELLED
+  DRAFT
+  OVERDUE
+  PAID
+  SENT
+}
+
+type Lead {
+  assignedTo: User
+  assignedToId: ID
+  companyId: ID
+  contactId: ID
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  deletedAt: DateTime
+  description: String
+  expectedCloseDate: DateTime
+  id: ID!
+  isActive: Boolean!
+  priority: String!
+  source: String
+  status: String!
+  title: String!
+  updatedAt: DateTime!
+  value: Float
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+"""Marital status options"""
+enum MaritalStatus {
+  DIVORCED
+  MARRIED
+  SINGLE
+  WIDOWED
+}
+
+type Mutation {
+  addPayment(amount: Float!, invoiceId: ID!, notes: String, paymentMethod: String): Invoice!
+  approveAttendance(approved: Boolean!, attendanceId: ID!, notes: String): Attendance!
+  assignCompany(companyId: ID!, userId: ID!): Company!
+  assignContact(contactId: ID!, userId: ID!): Contact!
+  assignManager(employeeId: ID!, managerId: ID!): Employee!
+  assignPermissions(permissionIds: [String!]!, roleId: ID!): Boolean!
+  assignRole(roleId: ID!, userId: ID!): User!
+  assignUsersToRole(roleId: ID!, userIds: [String!]!): Boolean!
+  changePassword(newPassword: String!, userId: ID!): Boolean!
+  checkIn(employeeId: ID!, latitude: Float, longitude: Float, notes: String, workLocation: String): Attendance!
+  checkOut(attendanceId: ID!, latitude: Float, longitude: Float, notes: String): Attendance!
+
+  """Convert lead to deal and return success message"""
+  convertLeadToDeal(leadId: ID!): String!
+  createActivity(createActivityInput: CreateActivityInput!): Activity!
+  createAttendance(createAttendanceInput: CreateAttendanceInput!): Attendance!
+  createClient(createClientInput: CreateClientInput!): Client!
+  createCompany(createCompanyInput: CreateCompanyInput!): Company!
+  createContact(createContactInput: CreateContactInput!): Contact!
+  createDeal(createDealInput: CreateDealInput!): Deal!
+  createEmployee(createEmployeeInput: CreateEmployeeInput!): Employee!
+
+  """Create a new invoice"""
+  createInvoice(createInvoiceDto: CreateInvoiceDto!): Invoice!
+  createLead(createLeadInput: CreateLeadInput!): Lead!
+  createNote(createNoteInput: CreateNoteInput!): Note!
+  createPermission(createPermissionInput: CreatePermissionInput!): Permission!
+  createProject(createProjectInput: CreateProjectInput!): Project!
+  createReport(createReportInput: CreateReportInput!): Report!
+  createResourcePermissions(actions: [ActionType!]!, resource: ResourceType!): [Permission!]!
+  createRole(createRoleInput: CreateRoleInput!): Role!
+  createUser(createUserInput: CreateUserInput!): User!
+  deleteFile(deleteInput: DeleteFileInput!): Boolean!
+  duplicateRole(newName: String!, roleId: ID!): Role!
+  exportReport(format: String! = "PDF", reportId: ID!): String!
+  generateRecurringInvoice(invoiceId: ID!): Invoice!
+  generateReport(parameters: String, reportId: ID!): Report!
+  login(loginInput: LoginInput!): AuthResponse!
+  logout: Boolean!
+  markActivityAsCompleted(id: ID!): Activity!
+  markAsAbsent(date: DateTime!, employeeId: ID!, reason: String): Attendance!
+  markAsLate(checkInTime: DateTime!, employeeId: ID!, workLocation: String): Attendance!
+  markAsPaid(invoiceId: ID!, paidAmount: Float!, paymentDate: DateTime): Invoice!
+  refreshToken(refreshTokenInput: RefreshTokenInput!): AuthResponse!
+  register(registerInput: RegisterInput!): AuthResponse!
+  removeActivity(id: ID!): Boolean!
+  removeAttendance(id: ID!): Boolean!
+  removeClient(id: String!): Boolean!
+
+  """Returns true if company was successfully deleted"""
+  removeCompany(id: ID!): Boolean!
+
+  """Returns true if contact was successfully deleted"""
+  removeContact(id: ID!): Boolean!
+  removeDeal(id: String!): Deal!
+  removeEmployee(id: ID!): Boolean!
+  removeInvoice(id: ID!): Boolean!
+  removeLead(id: ID!): Lead!
+  removeNote(id: ID!): Boolean!
+  removePermission(id: ID!): Boolean!
+  removePermissionFromRole(permissionId: ID!, roleId: ID!): Boolean!
+  removeProject(id: String!): Boolean!
+  removeReport(id: ID!): Boolean!
+  removeRole(id: ID!): Boolean!
+  removeUser(id: ID!): Boolean!
+  removeUsersFromRole(roleId: ID!, userIds: [String!]!): Boolean!
+  requestOvertime(attendanceId: ID!, overtimeHours: Float!, reason: String!): Attendance!
+  scheduleReport(recipients: [String!]!, reportId: ID!, schedule: String!): Report!
+  sendInvoice(invoiceId: ID!): Invoice!
+  toggleRoleStatus(roleId: ID!): Role!
+  toggleUserStatus(userId: ID!): User!
+  updateActivity(id: ID!, updateActivityInput: UpdateActivityInput!): Activity!
+  updateAttendance(updateAttendanceInput: UpdateAttendanceInput!): Attendance!
+  updateClient(updateClientInput: UpdateClientInput!): Client!
+  updateClientStatus(id: String!, status: String!): Client!
+  updateCompany(updateCompanyInput: UpdateCompanyInput!): Company!
+  updateContact(updateContactInput: UpdateContactInput!): Contact!
+  updateDeal(updateDealInput: UpdateDealInput!): Deal!
+  updateDealStage(dealId: String!, stage: String!): Deal!
+  updateEmployee(id: ID!, updateEmployeeInput: UpdateEmployeeInput!): Employee!
+  updateEmploymentStatus(employeeId: ID!, status: EmployeeStatus!): Employee!
+  updateInvoice(id: ID!, updateInvoiceDto: UpdateInvoiceDto!): Invoice!
+  updateLead(updateLeadInput: UpdateLeadInput!): Lead!
+  updateNote(id: ID!, updateNoteInput: UpdateNoteInput!): Note!
+  updatePermission(updatePermissionInput: UpdatePermissionInput!): Permission!
+  updateProject(updateProjectInput: UpdateProjectInput!): Project!
+  updateProjectProgress(id: String!, progress: Int!): Project!
+  updateProjectStatus(id: String!, status: String!): Project!
+  updateReport(updateReportInput: UpdateReportInput!): Report!
+  updateReportStatus(id: ID!, status: String!): Report!
+  updateRole(updateRoleInput: UpdateRoleInput!): Role!
+  updateUser(updateUserInput: UpdateUserInput!): User!
+
+  """Upload a file for a specific entity. Returns upload instructions."""
+  uploadFile(uploadInput: FileUploadInput!): String!
+}
+
+type Note {
+  company: Company
+  companyId: ID
+  contact: Contact
+  contactId: ID
+  content: String!
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  deal: Deal
+  dealId: ID
+  deletedAt: DateTime
+  id: ID!
+  isPrivate: Boolean!
+  lead: Lead
+  leadId: ID
+  updatedAt: DateTime!
+}
+
+type PaginatedActivityResponse {
+  items: [Activity!]!
+  pagination: PaginationMeta!
+}
+
+type PaginatedCompanyResponse {
+  items: [Company!]!
+  pagination: PaginationMeta!
+}
+
+type PaginatedContactResponse {
+  items: [Contact!]!
+  pagination: PaginationMeta!
+}
+
+type PaginatedEmployeeResponse {
+  items: [Employee!]!
+  pagination: PaginationMeta!
+}
+
+type PaginatedNoteResponse {
+  items: [Note!]!
+  pagination: PaginationMeta!
+}
+
+input PaginationInput {
+  limit: Int = 10
+  page: Int = 1
+  search: String
+  sortBy: String
+  sortOrder: String = "DESC"
+}
+
+type PaginationMeta {
+  hasNext: Boolean!
+  hasPrevious: Boolean!
+  limit: Int!
+  page: Int!
+  total: Int!
+  totalPages: Int!
+}
+
+type Permission {
+  action: ActionType!
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  id: ID!
+  resource: ResourceType!
+  updatedAt: DateTime!
+}
+
+"""Priority level"""
+enum Priority {
+  HIGH
+  LOW
+  MEDIUM
+  URGENT
+}
+
+type Project {
+  actualCost: Float
+  actualEndDate: DateTime
+  actualStartDate: DateTime
+  budget: Float
+  client: Client!
+  clientId: String!
+  code: String
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  currency: String
+  deletedAt: DateTime
+  description: String
+  endDate: DateTime
+  id: ID!
+  name: String!
+  priority: Priority!
+  progress: Int!
+  projectManager: User
+  projectManagerId: String
+  startDate: DateTime
+  status: ProjectStatus!
+  teamMembers: [User!]!
+  type: ProjectType
+  updatedAt: DateTime!
+}
+
+"""Project status"""
+enum ProjectStatus {
+  ACTIVE
+  CANCELLED
+  COMPLETED
+  ON_HOLD
+  PLANNING
+}
+
+"""Project type"""
+enum ProjectType {
+  FIXED_PRICE
+  RETAINER
+  TIME_AND_MATERIALS
+}
+
+type Query {
+  activeClients(skip: Int, take: Int): [Client!]!
+  activeEmployees: [Employee!]!
+  activeProjects(skip: Int, take: Int): [Project!]!
+  activeRoles(skip: Int, take: Int): [Role!]!
+  activeUsers(skip: Int, take: Int): [User!]!
+  activities(pagination: PaginationInput): PaginatedActivityResponse!
+  activitiesByCompany(companyId: ID!): [Activity!]!
+  activitiesByContact(contactId: ID!): [Activity!]!
+  activitiesByDeal(dealId: ID!): [Activity!]!
+  activitiesByLead(leadId: ID!): [Activity!]!
+  activity(id: ID!): Activity!
+  allResourcePermissions(skip: Int, take: Int): String!
+  attendance(skip: Int, take: Int): [Attendance!]!
+  attendanceByDateRange(employeeId: ID, endDate: DateTime!, skip: Int, startDate: DateTime!, take: Int): [Attendance!]!
+  attendanceByEmployee(employeeId: ID!, endDate: DateTime, skip: Int, startDate: DateTime, take: Int): [Attendance!]!
+  attendanceById(id: ID!): Attendance!
+  attendanceByStatus(skip: Int, status: AttendanceStatus!, take: Int): [Attendance!]!
+  attendanceSummary(employeeId: ID!, endDate: DateTime!, startDate: DateTime!): String!
+  client(id: String!): Client!
+  clients(skip: Int, take: Int): [Client!]!
+  clientsByAccountManager(accountManagerId: String!, skip: Int, take: Int): [Client!]!
+  clientsByStatus(skip: Int, status: String!, take: Int): [Client!]!
+  clientsByType(skip: Int, take: Int, type: String!): [Client!]!
+  companies(pagination: PaginationInput): PaginatedCompanyResponse!
+  companiesByAssignedUser(assignedToId: ID!, skip: Float, take: Float): [Company!]!
+  companiesByIndustry(industry: String!, skip: Float, take: Float): [Company!]!
+  companiesByStatus(skip: Float, status: String!, take: Float): [Company!]!
+  company(id: ID!): Company!
+  completedReports(skip: Int, take: Int): [Report!]!
+  contact(id: ID!): Contact!
+  contacts(pagination: PaginationInput): PaginatedContactResponse!
+  contactsByAssignedUser(assignedToId: ID!, skip: Float, take: Float): [Contact!]!
+  contactsByCompany(companyId: ID!, skip: Float, take: Float): [Contact!]!
+  deal(id: String!): Deal!
+  deals(limit: Int = 10, page: Int = 1): [Deal!]!
+  employee(id: ID!): Employee!
+  employeeHierarchy(employeeId: ID!): [Employee!]!
+  employees(pagination: PaginationInput): PaginatedEmployeeResponse!
+  employeesByDepartment(department: String!): [Employee!]!
+  employeesByManager(managerId: ID!): [Employee!]!
+  executeReport(format: String! = "JSON", parameters: String, reportId: ID!): String!
+  financialReports(period: String! = "monthly", skip: Int, take: Int): [Report!]!
+  generateInvoicePDF(invoiceId: ID!): String!
+  hello: String!
+
+  """Get a specific invoice by ID"""
+  invoice(id: ID!): Invoice!
+
+  """Get paginated list of invoices with optional filtering"""
+  invoices(endDate: DateTime, limit: Int = 10, page: Int = 1, search: String, sortBy: String = "createdAt", sortOrder: String = "desc", startDate: DateTime): [Invoice!]!
+
+  """Get all invoices for a specific client"""
+  invoicesByClient(clientId: ID!, endDate: DateTime, startDate: DateTime, status: String): [Invoice!]!
+
+  """Get all invoices for a specific project"""
+  invoicesByProject(endDate: DateTime, projectId: ID!, startDate: DateTime, status: String): [Invoice!]!
+
+  """Get all invoices with a specific status"""
+  invoicesByStatus(status: String!): [Invoice!]!
+  lead(id: ID!): Lead!
+  leads(limit: Float = 10, page: Float = 1): [Lead!]!
+  me: User!
+  myPermissions: String!
+  note(id: ID!): Note!
+  notes(pagination: PaginationInput): PaginatedNoteResponse!
+  notesByCompany(companyId: ID!): [Note!]!
+  notesByContact(contactId: ID!): [Note!]!
+  notesByDeal(dealId: ID!): [Note!]!
+  notesByLead(leadId: ID!): [Note!]!
+  overdueActivities: [Activity!]!
+
+  """Get all overdue invoices"""
+  overdueInvoices: [Invoice!]!
+  pendingAttendanceApprovals(skip: Int, take: Int): [Attendance!]!
+  pendingReports(skip: Int, take: Int): [Report!]!
+  permission(id: ID!): Permission!
+  permissionByResourceAndAction(action: ActionType!, resource: ResourceType!): Permission
+  permissions(skip: Int, take: Int): [Permission!]!
+  permissionsByAction(action: ActionType!, skip: Int, take: Int): [Permission!]!
+  permissionsByResource(resource: ResourceType!, skip: Int, take: Int): [Permission!]!
+  project(id: String!): Project!
+  projectReports(projectId: ID, skip: Int, take: Int): [Report!]!
+  projects(skip: Int, take: Int): [Project!]!
+  projectsByClient(clientId: String!, skip: Int, take: Int): [Project!]!
+  projectsByManager(projectManagerId: String!, skip: Int, take: Int): [Project!]!
+  projectsByPriority(priority: String!, skip: Int, take: Int): [Project!]!
+  projectsByStatus(skip: Int, status: String!, take: Int): [Project!]!
+  report(id: ID!): Report!
+  reports(skip: Int, take: Int): [Report!]!
+  reportsByStatus(skip: Int, status: String!, take: Int): [Report!]!
+  reportsByType(skip: Int, take: Int, type: String!): [Report!]!
+  role(id: ID!): Role!
+  roleByName(name: String!): Role
+  rolePermissions(roleId: ID!): String!
+  roleUsers(roleId: ID!, skip: Int, take: Int): String!
+  roles(skip: Int, take: Int): [Role!]!
+  salesReports(endDate: DateTime, skip: Int, startDate: DateTime, take: Int): [Report!]!
+  scheduledReports(skip: Int, take: Int): [Report!]!
+  todayAttendance(employeeId: ID!): Attendance
+  upcomingActivities: [Activity!]!
+  user(id: ID!): User!
+  userByEmail(email: String!): User
+  userProfile(userId: ID!): User!
+  users(skip: Int, take: Int): String!
+  usersByRole(roleId: ID!, skip: Int, take: Int): [User!]!
+  validatePermissionExists(action: ActionType!, resource: ResourceType!): Boolean!
+}
+
+input RefreshTokenInput {
+  refreshToken: String!
+}
+
+input RegisterInput {
+  email: String!
+  firstName: String!
+  lastName: String!
+  password: String!
+  phone: String
+}
+
+type Report {
+  columns: [String!]!
+  createdAt: DateTime!
+  createdBy: User!
+  createdById: String!
+  deletedAt: DateTime
+  description: String
+  emailOnCompletion: Boolean!
+  emailRecipients: [String!]!
+  endDate: DateTime
+  errorMessage: String
+  filePath: String
+  fileSize: Float
+  fileUrl: String
+  filters: [ReportFilter!]!
+  format: ReportFormat!
+  generatedAt: DateTime
+  id: ID!
+  isScheduled: Boolean!
+  lastRunAt: DateTime
+  name: String!
+  nextRunAt: DateTime
+  query: String
+  schedulePattern: String
+  startDate: DateTime
+  status: ReportStatus!
+  type: ReportType!
+  updatedAt: DateTime!
+}
+
+type ReportFilter {
+  field: String!
+  operator: String!
+  value: String!
+}
+
+enum ReportFormat {
+  CSV
+  EXCEL
+  JSON
+  PDF
+}
+
+enum ReportStatus {
+  COMPLETED
+  FAILED
+  GENERATING
+  PENDING
+}
+
+enum ReportType {
+  ATTENDANCE
+  CLIENT
+  CUSTOM
+  EMPLOYEE
+  FINANCIAL
+  PROJECT
+  SALES
+}
+
+"""Available resource types in the system"""
+enum ResourceType {
+  ACTIVITY
+  ATTENDANCE
+  CLIENT
+  COMPANY
+  CONTACT
+  DASHBOARD
+  DEAL
+  EMPLOYEE
+  INVOICE
+  LEAD
+  NOTE
+  PERMISSION
+  PROJECT
+  REPORT
+  ROLE
+  USER
+}
+
+type Role {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  description: String
+  id: ID!
+  isActive: Boolean!
+  name: String!
+  permissionCount: Float
+  permissions: [Permission!]
+  updatedAt: DateTime!
+  userCount: Float
+  users: [User!]
+}
+
+"""The salary payment type"""
+enum SalaryType {
+  HOURLY
+  MONTHLY
+  YEARLY
+}
+
+input UpdateActivityInput {
+  assignedToId: String
+  companyId: String
+  contactId: String
+  dealId: String
+  description: String
+  duration: Int = 0
+  followUpAction: String
+  followUpDate: DateTime
+  id: ID!
+  leadId: String
+  location: String
+  outcome: String
+  priority: Priority = MEDIUM
+  scheduledAt: DateTime
+  status: ActivityStatus = SCHEDULED
+  subject: String
+  type: ActivityType
+}
+
+input UpdateAttendanceInput {
+  approvalStatus: ApprovalStatus = PENDING
+  approvedById: String
+  breakTime: Float
+  checkIn: String
+  checkOut: String
+  date: String
+  employeeId: String
+  hoursWorked: Float
+  id: ID!
+  ipAddress: String
+  isHoliday: Boolean = false
+  isOvertime: Boolean = false
+  isWeekend: Boolean = false
+  latitude: Float
+  longitude: Float
+  notes: String
+  overtimeHours: Float
+  reasonForAbsence: String
+  status: AttendanceStatus
+  workLocation: String
+}
+
+input UpdateClientInput {
+  accountManagerId: String
+  billingAddress: String
+  code: String
+  companyId: String
+  description: String
+  email: String
+  id: ID!
+  industry: String
+  name: String
+  notes: String
+  paymentTerms: Int = 30
+  phone: String
+  preferredCurrency: String = "USD"
+  primaryContactId: String
+  shippingAddress: String
+  status: ClientStatus = ACTIVE
+  taxId: String
+  type: ClientType
+  website: String
+}
+
+input UpdateCompanyInput {
+  assignedToId: String
+  city: String
+  country: String
+  email: String
+  id: ID!
+  industry: String
+  isActive: Boolean
+  linkedinUrl: String
+  name: String
+  phone: String
+  revenue: Float
+  size: CompanySize
+  state: String
+  status: CompanyStatus
+  street: String
+  twitterUrl: String
+  website: String
+  zipCode: String
+}
+
+input UpdateContactInput {
+  assignedToId: String
+  city: String
+  companyId: String
+  country: String
+  department: String
+  email: String
+  firstName: String
+  id: ID!
+  isActive: Boolean
+  jobTitle: String
+  lastName: String
+  linkedinUrl: String
+  mobile: String
+  phone: String
+  source: ContactSource
+  state: String
+  status: ContactStatus
+  street: String
+  twitterUrl: String
+  websiteUrl: String
+  zipCode: String
+}
+
+input UpdateDealInput {
+  actualCloseDate: String
+  assignedToId: String
+  companyId: String
+  contactId: String
+  description: String
+  expectedCloseDate: String
+  id: ID!
+  isActive: Boolean = true
+  leadId: String
+  priority: String
+  probability: Float
+  stage: String
+  title: String
+  value: Float
+}
+
+input UpdateEmployeeInput {
+  address: String
+  dateOfBirth: String
+  department: String
+  email: String
+  emergencyContact: String
+  emergencyPhone: String
+  employmentType: EmploymentType = FULL_TIME
+  firstName: String
+  gender: Gender
+  hireDate: String
+  id: ID!
+  lastName: String
+  managerId: ID
+  maritalStatus: MaritalStatus
+  personalEmail: String
+  phone: String
+  position: String
+  salary: Float
+  salaryType: SalaryType
+  status: EmployeeStatus = ACTIVE
+  terminationDate: String
+  userId: ID
+  weeklyHours: Int = 40
+  workLocation: WorkLocation
+}
+
+input UpdateInvoiceDto {
+  clientId: String
+  currency: String
+  description: String
+  discountAmount: Float
+  dueDate: String
+  exchangeRate: Float
+  issueDate: String
+  items: [CreateInvoiceItemDto!]
+  notes: String
+  paymentMethod: String
+  paymentReference: String
+  projectId: String
+  status: InvoiceStatus
+  taxAmount: Float
+  terms: String
+}
+
+input UpdateLeadInput {
+  assignedToId: String
+  companyId: String
+  contactId: String
+  description: String
+  expectedCloseDate: String
+  id: ID!
+  isActive: Boolean = true
+  priority: String
+  source: String
+  status: String
+  title: String
+  value: Float
+}
+
+input UpdateNoteInput {
+  companyId: ID
+  contactId: ID
+  content: String
+  dealId: ID
+  id: ID!
+  isPrivate: Boolean = false
+  leadId: ID
+}
+
+input UpdatePermissionInput {
+  action: ActionType
+  description: String
+  id: ID!
+  resource: ResourceType
+}
+
+input UpdateProjectInput {
+  actualCost: Float
+  actualEndDate: String
+  actualStartDate: String
+  budget: Float
+  clientId: String
+  code: String
+  currency: String = "USD"
+  description: String
+  endDate: String
+  id: ID!
+  name: String
+  priority: Priority = MEDIUM
+  progress: Float = 0
+  projectManagerId: String
+  startDate: String
+  status: ProjectStatus = PLANNING
+  teamMemberIds: [String!] = []
+  type: ProjectType
+}
+
+input UpdateReportInput {
+  columns: [String!] = []
+  description: String
+  emailOnCompletion: Boolean = false
+  emailRecipients: [String!] = []
+  endDate: String
+  filters: [CreateReportFilterInput!] = []
+  format: ReportFormat = PDF
+  id: ID!
+  isScheduled: Boolean = false
+  name: String
+  query: String
+  schedulePattern: String
+  startDate: String
+  type: ReportType
+}
+
+input UpdateRoleInput {
+  description: String
+  id: ID!
+  isActive: Boolean = true
+  name: String
+  permissionIds: [String!]
+}
+
+input UpdateUserInput {
+  email: String
+  firstName: String
+  id: ID!
+  image: String
+  isActive: Boolean = true
+  lastName: String
+  password: String
+  phone: String
+  roleId: String
+}
+
+"""The type of entity the file is being uploaded for"""
+enum UploadEntityType {
+  ACTIVITY
+  COMPANY
+  CONTACT
+  EMPLOYEE
+  INVOICE
+  PROJECT
+  USER
+}
+
+type User {
+  createdAt: DateTime!
+  deletedAt: DateTime
+  email: String!
+  firstName: String!
+  id: ID!
+  image: String
+  isActive: Boolean!
+  lastName: String!
+  phone: String
+  roleId: ID!
+  updatedAt: DateTime!
+}
+
+"""The work location type"""
+enum WorkLocation {
+  HYBRID
+  OFFICE
+  REMOTE
+}

@@ -4,37 +4,69 @@ A comprehensive Customer Relationship Management (CRM) backend built with NestJS
 
 ## 🚀 Features
 
-- **🔐 Advanced Authentication & Authorization**
-  - JWT-based authentication with refresh tokens
-  - Dynamic RBAC with resource-based permissions  
-  - Role hierarchy and conditional permissions
-  - Permission caching for optimal performance
+### 🔐 Advanced Authentication & Authorization
+- JWT-based authentication with refresh tokens
+- Dynamic RBAC with resource-based permissions  
+- Role hierarchy and conditional permissions
+- Permission caching for optimal performance
+- Multi-level permission system (create, read, update, delete, manage, assign)
 
-- **🎯 GraphQL API**
-  - Type-safe GraphQL schema
-  - Query complexity analysis
-  - Playground for development
-  - Real-time subscriptions ready
+### 🎯 GraphQL API
+- Type-safe GraphQL schema with auto-generation
+- Query complexity analysis and rate limiting
+- Interactive GraphQL Playground for development
+- Real-time subscriptions ready
+- Comprehensive error handling and validation
 
-- **📊 CRM Entities**
-  - Users, Roles, and Permissions management
-  - Contacts and Companies
-  - Leads and Deals pipeline
-  - Activities and Notes tracking
+### 📊 Complete CRM Module Suite
+- **User Management**: Complete user lifecycle with role-based access
+- **Contact Management**: Individual contact records with full CRUD operations
+- **Company Management**: Organization records with contact relationships
+- **Lead Management**: Sales lead tracking with priority and status management
+- **Deal Management**: Sales opportunity pipeline with stage tracking
+- **Activity Tracking**: Tasks, calls, meetings, and follow-ups
+- **Note System**: Contextual notes on any CRM entity
+- **Project Management**: Project tracking with progress monitoring
+- **Invoice Management**: Billing and invoice generation
+- **Employee Management**: HR functionality with employee records
+- **Attendance System**: Employee time tracking with approval workflows
+- **Client Management**: Client relationship and portfolio management
+- **Reporting & Analytics**: Comprehensive business intelligence reports
 
-- **🛡️ Security & Performance**
-  - Security headers with Helmet
-  - Rate limiting and throttling
-  - Input validation and sanitization
-  - Performance monitoring and logging
-  - Health check endpoints
+### 🛡️ Enterprise Security & Performance
+- Security headers with Helmet integration
+- Rate limiting and request throttling (100 req/min)
+- Input validation and sanitization at all levels
+- SQL injection protection via Prisma ORM
+- Performance monitoring and structured logging
+- Health check endpoints for monitoring
+- Request ID tracking for audit trails
 
-- **🏗️ Enterprise Architecture**
-  - Clean architecture patterns
-  - Dependency injection
-  - Global error handling
-  - Request/Response interceptors
-  - Audit logging
+### 🏗️ Enterprise Architecture Patterns
+- **Clean Architecture**: Domain-driven design principles
+- **SOLID Principles**: Single responsibility, dependency injection
+- **Repository Pattern**: BaseService abstraction for consistent CRUD operations
+- **Mapper Pattern**: Clean data transformation between layers
+- **Template Method Pattern**: Standardized service layer operations
+- **Strategy Pattern**: Flexible permission and validation strategies
+- **Audit Trail**: Complete change tracking with user attribution
+- **Soft Delete**: Data preservation with logical deletion
+
+### 📈 Advanced Business Logic
+- **Deal Pipeline Management**: Stage-based sales process
+- **Lead Scoring**: Priority-based lead qualification
+- **Attendance Approval Workflows**: Multi-level approval system
+- **Project Progress Tracking**: Real-time project status updates
+- **Permission Assignment**: Dynamic role and permission management
+- **Multi-tenant Ready**: User-scoped data access patterns
+
+### 🔄 Data Management & Integration
+- **Database Migrations**: Prisma-based schema evolution
+- **Data Seeding**: Comprehensive initial data setup
+- **Bulk Operations**: Efficient batch processing
+- **Pagination**: Consistent cursor-based pagination
+- **Search & Filtering**: Advanced query capabilities
+- **File Upload**: Document and asset management
 
 ## 🛠️ Tech Stack
 
@@ -42,10 +74,13 @@ A comprehensive Customer Relationship Management (CRM) backend built with NestJS
 |------------|---------|---------|
 | **NestJS** | ^11.0.1 | Node.js framework |
 | **GraphQL** | ^16.11.0 | API query language |
-| **Prisma** | ^5.20.0 | Database ORM |
+| **Prisma** | ^6.15.0 | Database ORM |
 | **PostgreSQL** | Latest | Primary database |
 | **TypeScript** | ^5.7.3 | Type safety |
 | **Jest** | ^30.0.0 | Testing framework |
+| **Passport JWT** | ^10.0.0 | Authentication |
+| **Class Validator** | Latest | Input validation |
+| **Bcrypt** | ^5.1.1 | Password hashing |
 
 ## 📋 Prerequisites
 
@@ -72,6 +107,16 @@ cp .env.example .env
 
 # Edit .env with your database credentials
 vim .env
+```
+
+Required environment variables:
+```bash
+DATABASE_URL=postgresql://username:password@localhost:5432/crm_db
+JWT_SECRET=your-jwt-secret-key
+JWT_REFRESH_SECRET=your-refresh-secret-key
+NODE_ENV=development
+PORT=3000
+FRONTEND_URL=http://localhost:3001
 ```
 
 ### 3. Database Setup
@@ -119,10 +164,9 @@ Password: admin123
 
 ⚠️ **Change these credentials immediately in production!**
 
-## 📚 GraphQL Schema
+## 📚 GraphQL Schema & Operations
 
-### Sample Queries
-
+### Authentication Operations
 ```graphql
 # User authentication
 mutation Login {
@@ -134,6 +178,15 @@ mutation Login {
       email
       firstName
       lastName
+      role {
+        name
+        permissions {
+          permission {
+            resource
+            action
+          }
+        }
+      }
     }
   }
 }
@@ -156,32 +209,53 @@ query Me {
     }
   }
 }
+```
 
-# List users (with RBAC)
-query Users {
-  users {
+### CRM Operations
+```graphql
+# Create lead
+mutation CreateLead {
+  createLead(createLeadInput: {
+    firstName: "John"
+    lastName: "Doe"
+    email: "john.doe@example.com"
+    phone: "+1234567890"
+    status: PROSPECT
+    priority: HIGH
+    source: "Website"
+    companyId: "company-id"
+  }) {
     id
     firstName
     lastName
-    email
-    isActive
-    role {
-      name
-    }
+    status
+    priority
   }
 }
 
-# Create user (admin only)
-mutation CreateUser {
-  createUser(createUserInput: {
-    firstName: "John"
-    lastName: "Doe"
-    email: "john@example.com"
-    password: "password123"
-    roleId: "role-id-here"
-  }) {
+# Update deal stage
+mutation UpdateDealStage {
+  updateDealStage(
+    dealId: "deal-id"
+    stage: "NEGOTIATION"
+  ) {
     id
-    email
+    title
+    stage
+    value
+  }
+}
+
+# Approve attendance
+mutation ApproveAttendance {
+  approveAttendance(
+    attendanceId: "attendance-id"
+    approved: true
+    notes: "Approved by manager"
+  ) {
+    id
+    status
+    approvalStatus
   }
 }
 ```
@@ -189,15 +263,14 @@ mutation CreateUser {
 ## 🔒 RBAC System
 
 ### Role Hierarchy
-1. **Super Admin** - Full system access
-2. **Admin** - Manage users, roles, and permissions
-3. **Manager** - Manage CRM data (leads, deals, contacts)
-4. **User** - Basic read access
+1. **Admin** - Full system access, user management, system configuration
+2. **Manager** - CRM data management, team oversight, reporting access
+3. **User** - Basic CRM operations, personal data access
 
 ### Permission Structure
-- **Resource**: `user`, `role`, `permission`, `contact`, `company`, `lead`, `deal`
-- **Action**: `create`, `read`, `update`, `delete`, `manage`, `assign`
-- **Conditions**: `own`, `team`, `department` (conditional access)
+- **Resources**: `user`, `role`, `permission`, `contact`, `company`, `lead`, `deal`, `activity`, `note`, `project`, `invoice`, `employee`, `attendance`, `client`, `report`
+- **Actions**: `create`, `read`, `update`, `delete`, `manage`, `assign`
+- **Scope**: User-based access control with ownership validation
 
 ### Permission Examples
 ```typescript
@@ -207,11 +280,10 @@ await rbacService.hasPermission(userId, {
   action: ActionType.CREATE
 });
 
-// Check if user can read own contacts only
+// Check if user can approve attendance
 await rbacService.hasPermission(userId, {
-  resource: ResourceType.CONTACT,
-  action: ActionType.READ,
-  conditions: [{ field: 'createdById', operator: 'own', value: userId }]
+  resource: ResourceType.ATTENDANCE,
+  action: ActionType.UPDATE
 });
 ```
 
@@ -219,17 +291,25 @@ await rbacService.hasPermission(userId, {
 
 ### Core Tables
 - `users` - User accounts with authentication
-- `roles` - User roles definition
+- `roles` - User roles definition  
 - `permissions` - System permissions
 - `role_permissions` - Role-permission mapping
 
-### CRM Tables  
-- `contacts` - Individual contacts
+### CRM Tables
+- `contacts` - Individual contact records
 - `companies` - Company/organization records
-- `leads` - Sales leads
-- `deals` - Sales opportunities
-- `activities` - Tasks, calls, meetings
-- `notes` - Text notes on any entity
+- `leads` - Sales leads with qualification
+- `deals` - Sales opportunities with pipeline stages
+- `activities` - Tasks, calls, meetings, follow-ups
+- `notes` - Contextual notes on any entity
+
+### Business Tables
+- `projects` - Project management records
+- `invoices` - Billing and invoice records
+- `employees` - HR employee management
+- `attendance` - Time tracking and attendance
+- `clients` - Client relationship management
+- `reports` - Business intelligence and analytics
 
 ## 🧪 Testing
 
@@ -269,29 +349,32 @@ CMD ["yarn", "start:prod"]
 NODE_ENV=production
 DATABASE_URL=postgresql://user:pass@host:5432/db
 JWT_SECRET=your-super-secret-production-key
+JWT_REFRESH_SECRET=your-refresh-secret-production-key
 FRONTEND_URL=https://your-frontend-domain.com
 ```
 
 ## 📊 Monitoring & Logging
 
 ### Health Checks
-- Database connectivity
-- Memory usage
-- Application uptime
-- Service readiness
+- Database connectivity monitoring
+- Memory usage tracking
+- Application uptime validation
+- Service readiness verification
 
 ### Performance Monitoring
 - Slow query detection (>1s)
 - Request duration tracking
 - Memory usage alerts
 - Error rate monitoring
+- GraphQL query complexity analysis
 
 ### Security Features
-- Request ID tracking
-- Rate limiting (100 req/min)
+- Request ID tracking for audit trails
+- Rate limiting (100 req/min per IP)
 - Security headers (Helmet)
 - Input validation & sanitization
-- SQL injection protection
+- SQL injection protection via Prisma
+- Password hashing with bcrypt
 
 ## 🔧 Development
 
@@ -299,23 +382,40 @@ FRONTEND_URL=https://your-frontend-domain.com
 
 ```
 src/
-├── auth/           # Authentication module
+├── auth/           # Authentication & JWT handling
 ├── users/          # User management
 ├── roles/          # Role management  
 ├── permissions/    # Permission management
+├── contacts/       # Contact management
+├── companies/      # Company management
+├── leads/          # Lead management
+├── deals/          # Deal management
+├── activities/     # Activity tracking
+├── notes/          # Note system
+├── projects/       # Project management
+├── invoices/       # Invoice management
+├── employees/      # Employee management
+├── attendance/     # Attendance system
+├── clients/        # Client management
+├── reports/        # Reporting & analytics
+├── upload/         # File upload handling
 ├── common/         # Shared components
 │   ├── decorators/ # Custom decorators
+│   ├── dto/        # Base DTOs
+│   ├── entities/   # Base entities
+│   ├── enums/      # System enums
 │   ├── filters/    # Exception filters
 │   ├── guards/     # Auth guards
 │   ├── interceptors/ # Request/response interceptors
 │   ├── middleware/ # Custom middleware
 │   ├── pipes/      # Validation pipes
+│   ├── services/   # Base services
 │   └── rbac/       # RBAC service
 ├── health/         # Health check endpoints
 └── main.ts         # Application bootstrap
 ```
 
-### Code Style
+### Code Style & Quality
 
 ```bash
 # Format code
@@ -326,6 +426,9 @@ yarn lint
 
 # Fix lint issues
 yarn lint --fix
+
+# Type checking
+yarn build
 ```
 
 ## 🤝 Contributing
@@ -342,7 +445,7 @@ GraphQL schema is auto-generated and available at:
 - Development: `http://localhost:3000/graphql`
 - Schema file: `src/schema.gql` (auto-generated)
 
-## 🔄 Database Migrations
+## 🔄 Database Operations
 
 ```bash
 # Create migration
@@ -353,6 +456,12 @@ yarn prisma migrate deploy
 
 # Reset database (dev only)
 yarn prisma migrate reset
+
+# Open Prisma Studio
+yarn prisma:studio
+
+# Seed database
+yarn db:seed
 ```
 
 ## 📈 Performance Tips
@@ -360,18 +469,18 @@ yarn prisma migrate reset
 1. **Database Optimization**
    - Use database indices on frequently queried fields
    - Implement connection pooling
-   - Monitor slow queries
+   - Monitor slow queries with logging
 
 2. **Caching Strategy**
    - RBAC permission caching (5min TTL)
    - User session caching
-   - Query result caching
+   - Query result caching for reports
 
 3. **Security Best Practices**
    - Regular security audits
    - Dependency vulnerability scanning
    - Rate limiting per IP/user
-   - Input validation at all levels
+   - Input validation at all API layers
 
 ## 🆘 Troubleshooting
 
@@ -397,6 +506,13 @@ yarn prisma migrate reset
    yarn install
    ```
 
+4. **GraphQL Schema Issues**
+   ```bash
+   # Regenerate schema
+   yarn start:dev
+   # Schema will auto-regenerate
+   ```
+
 ## 📄 License
 
 This project is [MIT licensed](LICENSE).
@@ -409,4 +525,4 @@ This project is [MIT licensed](LICENSE).
 
 ---
 
-**Built with ❤️ using NestJS, GraphQL, and TypeScript**
+**Built with ❤️ using NestJS, GraphQL, TypeScript, and Enterprise Architecture Patterns**

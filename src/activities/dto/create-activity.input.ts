@@ -9,6 +9,7 @@ import {
   IsNotEmpty,
   IsUUID,
 } from 'class-validator';
+import { Priority } from '../../common/enums/priority.enum';
 
 // Define GraphQL enum types
 export enum ActivityType {
@@ -28,13 +29,6 @@ export enum ActivityStatus {
   CANCELLED = 'CANCELLED',
 }
 
-export enum Priority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
-}
-
 // Register enums with GraphQL
 registerEnumType(ActivityType, {
   name: 'ActivityType',
@@ -44,11 +38,6 @@ registerEnumType(ActivityType, {
 registerEnumType(ActivityStatus, {
   name: 'ActivityStatus',
   description: 'Activity status values',
-});
-
-registerEnumType(Priority, {
-  name: 'Priority',
-  description: 'Priority values',
 });
 
 @InputType()

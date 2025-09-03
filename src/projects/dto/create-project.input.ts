@@ -11,6 +11,7 @@ import {
   IsArray,
   IsUUID,
 } from 'class-validator';
+import { Priority } from '../../common/enums/priority.enum';
 
 export enum ProjectStatus {
   PLANNING = 'PLANNING',
@@ -18,13 +19,6 @@ export enum ProjectStatus {
   ON_HOLD = 'ON_HOLD',
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
-}
-
-export enum Priority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
 }
 
 export enum ProjectType {
@@ -36,11 +30,6 @@ export enum ProjectType {
 registerEnumType(ProjectStatus, {
   name: 'ProjectStatus',
   description: 'Project status',
-});
-
-registerEnumType(Priority, {
-  name: 'Priority',
-  description: 'Priority level',
 });
 
 registerEnumType(ProjectType, {
