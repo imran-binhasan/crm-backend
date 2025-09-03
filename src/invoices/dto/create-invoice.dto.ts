@@ -1,90 +1,116 @@
-import { InputType, Field } from '@nestjs/graphql';
 import {
   IsString,
+  IsNotEmpty,
   IsOptional,
   IsNumber,
+  Min,
   IsDateString,
+  IsEnum,
   IsArray,
   ValidateNested,
+  IsUUID,
+  Length,
+  Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { InvoiceStatus } from '../interfaces/invoice.interface';
 
-@InputType()
-class InvoiceItemDto {
-  @Field()
+export class CreateInvoiceItemDto {
   @IsString()
+  @IsNotEmpty()
+  @Length(1, 500)
   description: string;
 
-  @Field()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  @Max(999999.99)
   quantity: number;
 
-  @Field()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0.01)
+  @Max(999999.99)
   unitPrice: number;
 
-  @Field({ nullable: true })
   @IsOptional()
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100)
   taxRate?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  taxAmount?: number;
 }
 
-@InputType()
 export class CreateInvoiceDto {
-  @Field()
-  @IsString()
+  @IsUUID(4)
+  @IsNotEmpty()
   clientId: string;
 
-  @Field({ nullable: true })
   @IsOptional()
-  @IsString()
+  @IsUUID(4)
   projectId?: string;
 
-  @Field()
-  @IsString()
-  invoiceNumber: string;
-
-  @Field()
   @IsDateString()
+  @IsNotEmpty()
   issueDate: string;
 
-  @Field()
   @IsDateString()
+  @IsNotEmpty()
   dueDate: string;
 
-  @Field({ nullable: true })
+  @IsOptional()
+  @IsEnum(InvoiceStatus)
+  status?: InvoiceStatus;
+
   @IsOptional()
   @IsString()
-  status?: string;
+  @Length(0, 1000)
+  description?: string;
 
-  @Field({ nullable: true })
   @IsOptional()
   @IsString()
-  currency?: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsNumber()
-  taxRate?: number;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsNumber()
-  discountAmount?: number;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsString()
-  terms?: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsString()
+  @Length(0, 2000)
   notes?: string;
 
-  @Field(() => [InvoiceItemDto])
+  @IsOptional()
+  @IsString()
+  @Length(0, 2000)
+  terms?: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  taxAmount?: number;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  discountAmount?: number;
+
+  @IsOptional()
+  @IsString()
+  @Length(3, 3)
+  currency?: string;
+
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 6 })
+  @Min(0.000001)
+  exchangeRate?: number;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 50)
+  paymentMethod?: string;
+
+  @IsOptional()
+  @IsString()
+  @Length(0, 255)
+  paymentReference?: string;
+
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => InvoiceItemDto)
-  items: InvoiceItemDto[];
+  @Type(() => CreateInvoiceItemDto)
+  items: CreateInvoiceItemDto[];
 }

@@ -1,4 +1,4 @@
-import { InputType, Field, Float, Int } from '@nestjs/graphql';
+import { InputType, Field, Float, Int, ID } from '@nestjs/graphql';
 import {
   IsString,
   IsOptional,
@@ -9,14 +9,17 @@ import {
   Min,
   IsDateString,
 } from 'class-validator';
+import {
+  EmploymentType,
+  EmployeeStatus,
+  SalaryType,
+  WorkLocation,
+  Gender,
+  MaritalStatus,
+} from './employee.enums';
 
 @InputType()
 export class CreateEmployeeInput {
-  @Field(() => String)
-  @IsString()
-  @IsNotEmpty()
-  employeeId: string;
-
   @Field(() => String)
   @IsString()
   @IsNotEmpty()
@@ -47,15 +50,15 @@ export class CreateEmployeeInput {
   @IsOptional()
   dateOfBirth?: string;
 
-  @Field(() => String, { nullable: true })
-  @IsEnum(['MALE', 'FEMALE', 'OTHER'])
+  @Field(() => Gender, { nullable: true })
+  @IsEnum(Gender)
   @IsOptional()
-  gender?: string;
+  gender?: Gender;
 
-  @Field(() => String, { nullable: true })
-  @IsEnum(['SINGLE', 'MARRIED', 'DIVORCED', 'WIDOWED'])
+  @Field(() => MaritalStatus, { nullable: true })
+  @IsEnum(MaritalStatus)
   @IsOptional()
-  maritalStatus?: string;
+  maritalStatus?: MaritalStatus;
 
   @Field(() => String, { nullable: true })
   @IsString()
@@ -82,15 +85,15 @@ export class CreateEmployeeInput {
   @IsNotEmpty()
   position: string;
 
-  @Field(() => String)
-  @IsEnum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN'])
-  @IsNotEmpty()
-  employmentType: string;
-
-  @Field(() => String, { defaultValue: 'ACTIVE' })
-  @IsEnum(['ACTIVE', 'INACTIVE', 'TERMINATED', 'ON_LEAVE'])
+  @Field(() => EmploymentType, { defaultValue: EmploymentType.FULL_TIME })
+  @IsEnum(EmploymentType)
   @IsOptional()
-  status?: string;
+  employmentType?: EmploymentType;
+
+  @Field(() => EmployeeStatus, { defaultValue: EmployeeStatus.ACTIVE })
+  @IsEnum(EmployeeStatus)
+  @IsOptional()
+  status?: EmployeeStatus;
 
   @Field(() => String)
   @IsDateString()
@@ -108,15 +111,15 @@ export class CreateEmployeeInput {
   @IsOptional()
   salary?: number;
 
-  @Field(() => String, { nullable: true })
-  @IsEnum(['HOURLY', 'MONTHLY', 'YEARLY'])
+  @Field(() => SalaryType, { nullable: true })
+  @IsEnum(SalaryType)
   @IsOptional()
-  salaryType?: string;
+  salaryType?: SalaryType;
 
-  @Field(() => String, { nullable: true })
-  @IsEnum(['OFFICE', 'REMOTE', 'HYBRID'])
+  @Field(() => WorkLocation, { nullable: true })
+  @IsEnum(WorkLocation)
   @IsOptional()
-  workLocation?: string;
+  workLocation?: WorkLocation;
 
   @Field(() => Int, { defaultValue: 40 })
   @IsNumber()
@@ -124,12 +127,12 @@ export class CreateEmployeeInput {
   @IsOptional()
   weeklyHours?: number;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => ID, { nullable: true })
   @IsString()
   @IsOptional()
   managerId?: string;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => ID, { nullable: true })
   @IsString()
   @IsOptional()
   userId?: string;

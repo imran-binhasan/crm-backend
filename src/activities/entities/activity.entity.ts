@@ -4,17 +4,15 @@ import { Contact } from '../../contacts/entities/contact.entity';
 import { Company } from '../../companies/entities/company.entity';
 import { Lead } from '../../leads/entities/lead.entity';
 import { Deal } from '../../deals/entities/deal.entity';
+import { AuditableEntity } from '../../common/entities/base.entity';
 
 @ObjectType()
-export class Activity {
-  @Field(() => ID)
-  id: string;
-
+export class Activity extends AuditableEntity {
   @Field(() => String)
   type: string;
 
   @Field(() => String)
-  title: string;
+  subject: string;
 
   @Field(() => String, { nullable: true })
   description?: string;
@@ -30,21 +28,6 @@ export class Activity {
 
   @Field(() => String)
   priority: string;
-
-  @Field(() => Int, { defaultValue: 0 })
-  duration: number;
-
-  @Field(() => String, { nullable: true })
-  location?: string;
-
-  @Field(() => String, { nullable: true })
-  outcome?: string;
-
-  @Field(() => String, { nullable: true })
-  followUpAction?: string;
-
-  @Field(() => Date, { nullable: true })
-  followUpDate?: Date;
 
   // Related entities
   @Field(() => String, { nullable: true })
@@ -71,25 +54,12 @@ export class Activity {
   @Field(() => Deal, { nullable: true })
   deal?: Deal;
 
-  // System fields
-  @Field(() => String)
-  createdById: string;
-
-  @Field(() => User)
-  createdBy: User;
-
   @Field(() => String, { nullable: true })
   assignedToId?: string;
 
   @Field(() => User, { nullable: true })
   assignedTo?: User;
 
-  @Field(() => Date)
-  createdAt: Date;
-
-  @Field(() => Date)
-  updatedAt: Date;
-
-  @Field(() => Date, { nullable: true })
-  deletedAt?: Date;
+  @Field(() => User)
+  createdBy: User;
 }

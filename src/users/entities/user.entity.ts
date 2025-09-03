@@ -1,10 +1,8 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
+import { BaseEntity } from '../../common/entities/base.entity';
 
 @ObjectType()
-export class User {
-  @Field(() => ID)
-  id: string;
-
+export class User extends BaseEntity {
   @Field()
   firstName: string;
 
@@ -25,15 +23,6 @@ export class User {
 
   @Field(() => ID)
   roleId: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
-  @Field({ nullable: true })
-  deletedAt?: Date;
 
   // Relations will be added with field resolvers
 }

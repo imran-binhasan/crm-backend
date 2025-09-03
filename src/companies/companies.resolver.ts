@@ -10,21 +10,37 @@ import { RequireResource } from '../common/decorators/permissions.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ResourceType, ActionType } from '../common/rbac/permission.types';
 import { User } from '../users/entities/user.entity';
+import { PaginatedCompanyResponse } from './dto/paginated-company-response.dto';
+import { PaginationInput } from '../common/dto/pagination.input';
 
 @Resolver(() => Company)
 @UseGuards(JwtAuthGuard)
 export class CompaniesResolver {
   constructor(private readonly companiesService: CompaniesService) {}
 
-  @Query(() => [Company], { name: 'companies' })
+  @Query(() => PaginatedCompanyResponse, { name: 'companies' })
   @UseGuards(PermissionGuard)
   @RequireResource(ResourceType.COMPANY, ActionType.READ)
-  findAll(
+  async findAll(
     @CurrentUser() currentUser: User,
-    @Args('take', { type: () => Number, nullable: true }) take?: number,
-    @Args('skip', { type: () => Number, nullable: true }) skip?: number,
+    @Args('pagination', { type: () => PaginationInput, nullable: true }) 
+    pagination?: PaginationInput,
   ) {
-    return this.companiesService.findAll(currentUser.id, take, skip);
+    // Convert PaginationInput to PaginationOptions
+    const paginationOptions = pagination ? {
+      page: pagination.page,
+      limit: pagination.limit,
+      sortBy: pagination.sortBy,
+      sortOrder: pagination.sortOrder?.toLowerCase() as 'asc' | 'desc',
+    } : undefined;
+
+    const filterOptions = pagination?.search ? { search: pagination.search } : {};
+
+    const result = await this.companiesService.findAll(currentUser.id, paginationOptions, filterOptions);
+    return {
+      items: result.data,
+      pagination: result.meta,
+    };
   }
 
   @Query(() => Company, { name: 'company' })
@@ -61,13 +77,73 @@ export class CompaniesResolver {
     );
   }
 
-  @Mutation(() => Company)
+  @Mutation(() => Boolean, { description: 'Returns true if company was successfully deleted' })
   @UseGuards(PermissionGuard)
   @RequireResource(ResourceType.COMPANY, ActionType.DELETE)
-  removeCompany(
+  async removeCompany(
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() currentUser: User,
   ) {
-    return this.companiesService.remove(id, currentUser.id);
+    await this.companiesService.remove(id, currentUser.id);
+    return true;
+  }
+
+  @Mutation(() => Company)
+  @UseGuards(PermissionGuard)
+  @RequireResource(ResourceType.COMPANY, ActionType.ASSIGN)
+  assignCompany(
+    @Args('companyId', { type: () => ID }) companyId: string,
+    @Args('userId', { type: () => ID }) userId: string,
+    @CurrentUser() currentUser: User,
+  ) {
+    return this.companiesService.assignToUser(companyId, userId, currentUser.id);
+  }
+
+  @Query(() => [Company], { name: 'companiesByIndustry' })
+  @UseGuards(PermissionGuard)
+  @RequireResource(ResourceType.COMPANY, ActionType.READ)
+  findByIndustry(
+    @Args('industry') industry: string,
+    @CurrentUser() currentUser: User,
+    @Args('take', { type: () => Number, nullable: true }) take?: number,
+    @Args('skip', { type: () => Number, nullable: true }) skip?: number,
+  ) {
+    return this.companiesService.findByIndustry(
+      industry,
+      currentUser.id,
+      { take, skip },
+    );
+  }
+
+  @Query(() => [Company], { name: 'companiesByStatus' })
+  @UseGuards(PermissionGuard)
+  @RequireResource(ResourceType.COMPANY, ActionType.READ)
+  findByStatus(
+    @Args('status') status: string,
+    @CurrentUser() currentUser: User,
+    @Args('take', { type: () => Number, nullable: true }) take?: number,
+    @Args('skip', { type: () => Number, nullable: true }) skip?: number,
+  ) {
+    return this.companiesService.findByStatus(
+      status,
+      currentUser.id,
+      { take, skip },
+    );
+  }
+
+  @Query(() => [Company], { name: 'companiesByAssignedUser' })
+  @UseGuards(PermissionGuard)
+  @RequireResource(ResourceType.COMPANY, ActionType.READ)
+  findByAssignedUser(
+    @Args('assignedToId', { type: () => ID }) assignedToId: string,
+    @CurrentUser() currentUser: User,
+    @Args('take', { type: () => Number, nullable: true }) take?: number,
+    @Args('skip', { type: () => Number, nullable: true }) skip?: number,
+  ) {
+    return this.companiesService.findByAssignedUser(
+      assignedToId,
+      currentUser.id,
+      { take, skip },
+    );
   }
 }

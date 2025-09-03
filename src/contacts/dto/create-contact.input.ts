@@ -1,11 +1,43 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Field, InputType, registerEnumType } from '@nestjs/graphql';
 import {
   IsString,
   IsEmail,
   IsOptional,
   IsBoolean,
   IsUUID,
+  IsEnum,
 } from 'class-validator';
+
+// Define GraphQL enum types
+export enum ContactStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  QUALIFIED = 'QUALIFIED',
+  UNQUALIFIED = 'UNQUALIFIED',
+  CONVERTED = 'CONVERTED',
+}
+
+export enum ContactSource {
+  WEBSITE = 'website',
+  REFERRAL = 'referral',
+  COLD_CALL = 'cold_call',
+  EMAIL_CAMPAIGN = 'email_campaign',
+  SOCIAL_MEDIA = 'social_media',
+  TRADE_SHOW = 'trade_show',
+  PARTNER = 'partner',
+  OTHER = 'other',
+}
+
+// Register enums with GraphQL
+registerEnumType(ContactStatus, {
+  name: 'ContactStatus',
+  description: 'Contact status values',
+});
+
+registerEnumType(ContactSource, {
+  name: 'ContactSource',
+  description: 'Contact source values',
+});
 
 @InputType()
 export class CreateContactInput {
@@ -95,15 +127,15 @@ export class CreateContactInput {
   websiteUrl?: string;
 
   // Status and source
-  @Field({ nullable: true })
+  @Field(() => ContactStatus, { nullable: true })
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsEnum(ContactStatus)
+  status?: ContactStatus;
 
-  @Field({ nullable: true })
+  @Field(() => ContactSource, { nullable: true })
   @IsOptional()
-  @IsString()
-  source?: string;
+  @IsEnum(ContactSource)
+  source?: ContactSource;
 
   @Field({ nullable: true })
   @IsOptional()

@@ -1,4 +1,4 @@
-import { Field, InputType } from '@nestjs/graphql';
+import { Field, InputType, registerEnumType } from '@nestjs/graphql';
 import {
   IsString,
   IsEmail,
@@ -6,7 +6,36 @@ import {
   IsBoolean,
   IsUUID,
   IsNumber,
+  IsEnum,
 } from 'class-validator';
+
+// Define GraphQL enum types
+export enum CompanyStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  PROSPECT = 'PROSPECT',
+  CLIENT = 'CLIENT',
+  FORMER_CLIENT = 'FORMER_CLIENT',
+}
+
+export enum CompanySize {
+  STARTUP = 'STARTUP',
+  SMALL = 'SMALL',
+  MEDIUM = 'MEDIUM',
+  LARGE = 'LARGE',
+  ENTERPRISE = 'ENTERPRISE',
+}
+
+// Register enums with GraphQL
+registerEnumType(CompanyStatus, {
+  name: 'CompanyStatus',
+  description: 'Company status values',
+});
+
+registerEnumType(CompanySize, {
+  name: 'CompanySize',
+  description: 'Company size values',
+});
 
 @InputType()
 export class CreateCompanyInput {
@@ -19,10 +48,10 @@ export class CreateCompanyInput {
   @IsString()
   industry?: string;
 
-  @Field({ nullable: true })
+  @Field(() => CompanySize, { nullable: true })
   @IsOptional()
-  @IsString()
-  size?: string;
+  @IsEnum(CompanySize)
+  size?: CompanySize;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -86,10 +115,10 @@ export class CreateCompanyInput {
   @IsString()
   twitterUrl?: string;
 
-  @Field({ nullable: true })
+  @Field(() => CompanyStatus, { nullable: true })
   @IsOptional()
-  @IsString()
-  status?: string;
+  @IsEnum(CompanyStatus)
+  status?: CompanyStatus;
 
   @Field({ nullable: true })
   @IsOptional()

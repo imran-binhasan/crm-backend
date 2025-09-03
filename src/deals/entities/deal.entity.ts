@@ -1,11 +1,9 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
 import { User } from '../../users/entities/user.entity';
+import { AuditableEntity } from '../../common/entities/base.entity';
 
 @ObjectType()
-export class Deal {
-  @Field(() => ID)
-  id: string;
-
+export class Deal extends AuditableEntity {
   @Field()
   title: string;
 
@@ -20,9 +18,6 @@ export class Deal {
 
   @Field(() => ID, { nullable: true })
   assignedToId?: string;
-
-  @Field(() => ID)
-  createdById: string;
 
   @Field()
   value: number;
@@ -47,15 +42,6 @@ export class Deal {
 
   @Field()
   isActive: boolean;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
-  @Field({ nullable: true })
-  deletedAt?: Date;
 
   // Relations
   @Field(() => User, { nullable: true })

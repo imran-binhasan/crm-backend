@@ -1,12 +1,18 @@
-import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Float, Int } from '@nestjs/graphql';
 import { User } from '../../users/entities/user.entity';
 import { Decimal } from '@prisma/client/runtime/library';
+import { AuditableEntity } from '../../common/entities/base.entity';
+import {
+  EmploymentType,
+  EmployeeStatus,
+  SalaryType,
+  WorkLocation,
+  Gender,
+  MaritalStatus,
+} from '../dto/employee.enums';
 
 @ObjectType()
-export class Employee {
-  @Field(() => ID)
-  id: string;
-
+export class Employee extends AuditableEntity {
   @Field(() => String)
   employeeId: string;
 
@@ -28,11 +34,11 @@ export class Employee {
   @Field(() => Date, { nullable: true })
   dateOfBirth?: Date | null;
 
-  @Field(() => String, { nullable: true })
-  gender?: string | null;
+  @Field(() => Gender, { nullable: true })
+  gender?: Gender | null;
 
-  @Field(() => String, { nullable: true })
-  maritalStatus?: string | null;
+  @Field(() => MaritalStatus, { nullable: true })
+  maritalStatus?: MaritalStatus | null;
 
   @Field(() => String, { nullable: true })
   address?: string | null;
@@ -50,11 +56,11 @@ export class Employee {
   @Field(() => String)
   position: string;
 
-  @Field(() => String)
-  employmentType: string; // FULL_TIME, PART_TIME, CONTRACT, INTERN
+  @Field(() => EmploymentType)
+  employmentType: EmploymentType;
 
-  @Field(() => String)
-  status: string; // ACTIVE, INACTIVE, TERMINATED, ON_LEAVE
+  @Field(() => EmployeeStatus)
+  status: EmployeeStatus;
 
   @Field(() => Date)
   hireDate: Date;
@@ -65,17 +71,17 @@ export class Employee {
   @Field(() => Float, { nullable: true })
   salary?: Decimal | null;
 
-  @Field(() => String, { nullable: true })
-  salaryType?: string | null; // HOURLY, MONTHLY, YEARLY
+  @Field(() => SalaryType, { nullable: true })
+  salaryType?: SalaryType | null;
 
-  @Field(() => String, { nullable: true })
-  workLocation?: string | null; // OFFICE, REMOTE, HYBRID
+  @Field(() => WorkLocation, { nullable: true })
+  workLocation?: WorkLocation | null;
 
-  @Field(() => Number, { defaultValue: 40 })
+  @Field(() => Int, { defaultValue: 40 })
   weeklyHours: number;
 
   // Relations
-  @Field(() => String, { nullable: true })
+  @Field(() => ID, { nullable: true })
   managerId?: string | null;
 
   @Field(() => Employee, { nullable: true })
@@ -84,25 +90,12 @@ export class Employee {
   @Field(() => [Employee], { nullable: true })
   directReports?: Employee[] | null;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => ID, { nullable: true })
   userId?: string | null;
 
   @Field(() => User, { nullable: true })
   user?: User | null;
 
-  // System fields
-  @Field(() => String)
-  createdById: string;
-
   @Field(() => User)
   createdBy: User;
-
-  @Field(() => Date)
-  createdAt: Date;
-
-  @Field(() => Date)
-  updatedAt: Date;
-
-  @Field(() => Date, { nullable: true })
-  deletedAt?: Date | null;
 }

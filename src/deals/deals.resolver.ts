@@ -28,11 +28,12 @@ export class DealsResolver {
 
   @Query(() => [Deal], { name: 'deals' })
   async findAll(
-    @Args('take', { type: () => Int, nullable: true }) take?: number,
-    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @Args('page', { type: () => Int, nullable: true, defaultValue: 1 }) page?: number,
+    @Args('limit', { type: () => Int, nullable: true, defaultValue: 10 }) limit?: number,
     @Context() context?: any,
   ) {
-    return this.dealsService.findAll(context.req.user.sub, take, skip);
+    const result = await this.dealsService.findAll(context.req.user.sub, { page, limit });
+    return result.data;
   }
 
   @Query(() => Deal, { name: 'deal' })
@@ -71,5 +72,20 @@ export class DealsResolver {
     });
 
     return this.dealsService.remove(id, context.req.user.sub);
+  }
+
+  @Mutation(() => Deal)
+  async updateDealStage(
+    @Args('dealId', { type: () => String }) dealId: string,
+    @Args('stage', { type: () => String }) stage: string,
+    @Context() context: any,
+  ) {
+    this.logger.log('GraphQL: Updating deal stage', {
+      userId: context.req.user.sub,
+      dealId,
+      stage,
+    });
+
+    return this.dealsService.updateStage(dealId, stage, context.req.user.sub);
   }
 }

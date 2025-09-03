@@ -1,10 +1,8 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
+import { BaseEntity } from '../../common/entities/base.entity';
 
 @ObjectType()
-export class Role {
-  @Field(() => ID)
-  id: string;
-
+export class Role extends BaseEntity {
   @Field()
   name: string;
 
@@ -13,13 +11,4 @@ export class Role {
 
   @Field()
   isActive: boolean;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
-
-  @Field({ nullable: true })
-  deletedAt?: Date;
 }

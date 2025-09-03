@@ -1,10 +1,8 @@
 import { Field, ObjectType, ID } from '@nestjs/graphql';
+import { BaseEntity } from '../../common/entities/base.entity';
 
 @ObjectType()
-export class Permission {
-  @Field(() => ID)
-  id: string;
-
+export class Permission extends BaseEntity {
   @Field()
   resource: string;
 
@@ -13,10 +11,4 @@ export class Permission {
 
   @Field({ nullable: true })
   description?: string;
-
-  @Field()
-  createdAt: Date;
-
-  @Field()
-  updatedAt: Date;
 }

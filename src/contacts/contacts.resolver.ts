@@ -10,21 +10,37 @@ import { RequireResource } from '../common/decorators/permissions.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ResourceType, ActionType } from '../common/rbac/permission.types';
 import { User } from '../users/entities/user.entity';
+import { PaginatedContactResponse } from './dto/paginated-contact-response.dto';
+import { PaginationInput } from '../common/dto/pagination.input';
 
 @Resolver(() => Contact)
 @UseGuards(JwtAuthGuard)
 export class ContactsResolver {
   constructor(private readonly contactsService: ContactsService) {}
 
-  @Query(() => [Contact], { name: 'contacts' })
+  @Query(() => PaginatedContactResponse, { name: 'contacts' })
   @UseGuards(PermissionGuard)
   @RequireResource(ResourceType.CONTACT, ActionType.READ)
-  findAll(
+  async findAll(
     @CurrentUser() currentUser: User,
-    @Args('take', { type: () => Number, nullable: true }) take?: number,
-    @Args('skip', { type: () => Number, nullable: true }) skip?: number,
+    @Args('pagination', { type: () => PaginationInput, nullable: true }) 
+    pagination?: PaginationInput,
   ) {
-    return this.contactsService.findAll(currentUser.id, take, skip);
+    // Convert PaginationInput to PaginationOptions
+    const paginationOptions = pagination ? {
+      page: pagination.page,
+      limit: pagination.limit,
+      sortBy: pagination.sortBy,
+      sortOrder: pagination.sortOrder?.toLowerCase() as 'asc' | 'desc',
+    } : undefined;
+
+    const filterOptions = pagination?.search ? { search: pagination.search } : {};
+
+    const result = await this.contactsService.findAll(currentUser.id, paginationOptions, filterOptions);
+    return {
+      items: result.data,
+      pagination: result.meta,
+    };
   }
 
   @Query(() => Contact, { name: 'contact' })
@@ -61,14 +77,15 @@ export class ContactsResolver {
     );
   }
 
-  @Mutation(() => Contact)
+  @Mutation(() => Boolean, { description: 'Returns true if contact was successfully deleted' })
   @UseGuards(PermissionGuard)
   @RequireResource(ResourceType.CONTACT, ActionType.DELETE)
-  removeContact(
+  async removeContact(
     @Args('id', { type: () => ID }) id: string,
     @CurrentUser() currentUser: User,
   ) {
-    return this.contactsService.remove(id, currentUser.id);
+    await this.contactsService.remove(id, currentUser.id);
+    return true;
   }
 
   @Mutation(() => Contact)
@@ -80,5 +97,37 @@ export class ContactsResolver {
     @CurrentUser() currentUser: User,
   ) {
     return this.contactsService.assignToUser(contactId, userId, currentUser.id);
+  }
+
+  @Query(() => [Contact], { name: 'contactsByCompany' })
+  @UseGuards(PermissionGuard)
+  @RequireResource(ResourceType.CONTACT, ActionType.READ)
+  findByCompany(
+    @Args('companyId', { type: () => ID }) companyId: string,
+    @CurrentUser() currentUser: User,
+    @Args('take', { type: () => Number, nullable: true }) take?: number,
+    @Args('skip', { type: () => Number, nullable: true }) skip?: number,
+  ) {
+    return this.contactsService.findByCompany(
+      companyId,
+      currentUser.id,
+      { take, skip },
+    );
+  }
+
+  @Query(() => [Contact], { name: 'contactsByAssignedUser' })
+  @UseGuards(PermissionGuard)
+  @RequireResource(ResourceType.CONTACT, ActionType.READ)
+  findByAssignedUser(
+    @Args('assignedToId', { type: () => ID }) assignedToId: string,
+    @CurrentUser() currentUser: User,
+    @Args('take', { type: () => Number, nullable: true }) take?: number,
+    @Args('skip', { type: () => Number, nullable: true }) skip?: number,
+  ) {
+    return this.contactsService.findByAssignedUser(
+      assignedToId,
+      currentUser.id,
+      { take, skip },
+    );
   }
 }

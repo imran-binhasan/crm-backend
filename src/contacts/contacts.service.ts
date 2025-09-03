@@ -1,405 +1,258 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
   BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
+import { BaseService } from '../common/services/base.service';
 import { CreateContactInput } from './dto/create-contact.input';
 import { UpdateContactInput } from './dto/update-contact.input';
-import { ResourceType, ActionType } from '../common/rbac/permission.types';
-import { Contact, Prisma } from '@prisma/client';
+import { ResourceType } from '../common/rbac/permission.types';
+import { Contact } from './entities/contact.entity';
+import { ContactMapper } from './mappers/contact.mapper';
 
 @Injectable()
-export class ContactsService {
-  private readonly logger = new Logger(ContactsService.name);
+export class ContactsService extends BaseService<
+  Contact,
+  CreateContactInput,
+  UpdateContactInput
+> {
+  protected readonly resourceType = ResourceType.CONTACT;
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly rbacService: RbacService,
-  ) {}
-
-  async create(
-    data: CreateContactInput,
-    currentUserId: string,
-  ): Promise<Contact> {
-    try {
-      this.logger.log('Creating contact', {
-        currentUserId,
-        data: { firstName: data.firstName, lastName: data.lastName },
-      });
-
-      // Check permissions
-      const canCreate = await this.rbacService.hasPermission(currentUserId, {
-        resource: ResourceType.CONTACT,
-        action: ActionType.CREATE,
-      });
-      if (!canCreate) {
-        throw new ForbiddenException(
-          'Insufficient permissions to create contact',
-        );
-      }
-
-      // Validate input
-      if (!data.firstName || !data.lastName) {
-        throw new BadRequestException('First name and last name are required');
-      }
-
-      // Check if company exists (if provided)
-      if (data.companyId) {
-        const companyExists = await this.prisma.company.findUnique({
-          where: { id: data.companyId, deletedAt: null },
-        });
-        if (!companyExists) {
-          throw new BadRequestException('Invalid company ID provided');
-        }
-      }
-
-      // Check if assigned user exists (if provided)
-      if (data.assignedToId) {
-        const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true },
-        });
-        if (!userExists) {
-          throw new BadRequestException('Invalid assigned user ID provided');
-        }
-      }
-
-      const contact = await this.prisma.contact.create({
-        data: {
-          ...data,
-          createdById: currentUserId,
-          status: (data.status as any) || 'ACTIVE',
-        },
-        include: {
-          company: true,
-          assignedTo: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
-      });
-
-      this.logger.log(
-        `Contact created: ${contact.firstName} ${contact.lastName}`,
-      );
-      return contact;
-    } catch (error) {
-      this.logger.error(`Failed to create contact: ${error.message}`);
-      if (
-        error instanceof BadRequestException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-      throw new BadRequestException('Failed to create contact');
-    }
+    protected readonly prisma: PrismaService,
+    protected readonly rbacService: RbacService,
+  ) {
+    super(prisma, rbacService, 'ContactsService');
   }
 
-  async findAll(
-    currentUserId: string,
-    take?: number,
-    skip?: number,
-  ): Promise<Contact[]> {
-    try {
-      this.logger.log('Finding all contacts', { currentUserId, take, skip });
+  // Implementation of abstract methods from BaseService
+  protected async performCreate(data: CreateContactInput, currentUserId: string): Promise<Contact> {
+    await this.validateCreateInput(data, currentUserId);
 
-      // Check permissions
-      const hasPermission = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.CONTACT, action: ActionType.READ },
-      );
+    const contact = await this.prisma.contact.create({
+      data: {
+        ...data,
+        createdById: currentUserId,
+        status: data.status || 'ACTIVE',
+      },
+      include: this.getIncludeOptions(),
+    });
 
-      if (!hasPermission) {
-        throw new ForbiddenException(
-          'Insufficient permissions to access contacts',
-        );
-      }
-
-      // Get permission filters
-      const filters = await this.rbacService.getPermissionFilters(
-        currentUserId,
-        ResourceType.CONTACT,
-      );
-
-      const contacts = await this.prisma.contact.findMany({
-        where: {
-          deletedAt: null,
-          ...filters,
-        },
-        include: {
-          company: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          assignedTo: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
-        take,
-        skip,
-        orderBy: { createdAt: 'desc' },
-      });
-
-      this.logger.log('Successfully retrieved contacts', {
-        count: contacts.length,
-      });
-      return contacts;
-    } catch (error) {
-      this.logger.error('Error finding contacts', {
-        error: error.message,
-        currentUserId,
-      });
-      if (error instanceof ForbiddenException) {
-        throw error;
-      }
-      throw new BadRequestException('Failed to retrieve contacts');
-    }
+    return ContactMapper.toDomain(contact);
   }
 
-  async findOne(id: string, currentUserId: string): Promise<Contact> {
-    try {
-      const contact = await this.prisma.contact.findUnique({
-        where: { id, deletedAt: null },
-        include: {
-          company: true,
-          assignedTo: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
-      });
+  protected async performFindMany(options: any): Promise<Contact[]> {
+    const contacts = await this.prisma.contact.findMany({
+      ...options,
+      include: this.getIncludeOptions(),
+    });
 
-      if (!contact) {
-        throw new NotFoundException('Contact not found');
-      }
-
-      // Check permissions
-      const canRead = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.CONTACT, action: ActionType.READ },
-        contact,
-      );
-
-      if (!canRead) {
-        throw new ForbiddenException(
-          'Insufficient permissions to view this contact',
-        );
-      }
-
-      return contact;
-    } catch (error) {
-      this.logger.error(`Failed to find contact: ${error.message}`);
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-      throw new BadRequestException('Failed to retrieve contact');
-    }
+    return ContactMapper.toDomainArray(contacts);
   }
 
-  async update(
+  protected async performFindUnique(id: string): Promise<Contact | null> {
+    const contact = await this.prisma.contact.findUnique({
+      where: { id, deletedAt: null },
+      include: this.getIncludeOptions(),
+    });
+
+    return contact ? ContactMapper.toDomain(contact) : null;
+  }
+
+  protected async performUpdate(
     id: string,
     data: UpdateContactInput,
     currentUserId: string,
   ): Promise<Contact> {
-    try {
-      // Check if contact exists
-      const existingContact = await this.prisma.contact.findUnique({
-        where: { id, deletedAt: null },
+    await this.validateUpdateInput(id, data, currentUserId);
+
+    const { id: _, ...updateData } = data;
+
+    const contact = await this.prisma.contact.update({
+      where: { id },
+      data: updateData,
+      include: this.getIncludeOptions(),
+    });
+
+    return ContactMapper.toDomain(contact);
+  }
+
+  protected async performDelete(id: string): Promise<Contact> {
+    const contact = await this.prisma.contact.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+      include: this.getIncludeOptions(),
+    });
+
+    return ContactMapper.toDomain(contact);
+  }
+
+  protected async performSoftDelete(id: string, currentUserId: string): Promise<void> {
+    await this.prisma.contact.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
+
+  protected async performHardDelete(id: string): Promise<void> {
+    await this.prisma.contact.delete({
+      where: { id },
+    });
+  }
+
+  protected async performCount(options: any): Promise<number> {
+    return this.prisma.contact.count(options);
+  }
+
+  protected async buildWhereClause(filters: any, currentUserId: string): Promise<any> {
+    const baseWhere = { deletedAt: null };
+    const permissionFilters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    return {
+      ...baseWhere,
+      ...permissionFilters,
+      ...filters,
+    };
+  }
+
+  protected buildOrderBy(pagination: any): any {
+    return pagination?.orderBy || this.getDefaultOrderBy();
+  }
+
+  // Helper methods
+  private getIncludeOptions() {
+    return {
+      company: {
+        select: {
+          id: true,
+          name: true,
+          status: true,
+        },
+      },
+      assignedTo: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      createdBy: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+    };
+  }
+
+  private async validateCreateInput(
+    data: CreateContactInput,
+    currentUserId: string,
+  ): Promise<void> {
+    // Validate required fields
+    if (!data.firstName?.trim() || !data.lastName?.trim()) {
+      throw new BadRequestException('First name and last name are required');
+    }
+
+    // Validate company if provided
+    if (data.companyId) {
+      const company = await this.prisma.company.findUnique({
+        where: { id: data.companyId, deletedAt: null },
       });
-
-      if (!existingContact) {
-        throw new NotFoundException('Contact not found');
+      if (!company) {
+        throw new BadRequestException('Invalid company ID provided');
       }
+    }
 
-      // Check permissions
-      const canUpdate = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.CONTACT, action: ActionType.UPDATE },
-        existingContact,
-      );
-
-      if (!canUpdate) {
-        throw new ForbiddenException(
-          'Insufficient permissions to update this contact',
-        );
+    // Validate assigned user if provided
+    if (data.assignedToId) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: data.assignedToId, isActive: true },
+      });
+      if (!user) {
+        throw new BadRequestException('Invalid assigned user ID provided');
       }
+    }
 
-      // Validate company if provided
-      if (data.companyId && data.companyId !== existingContact.companyId) {
-        const companyExists = await this.prisma.company.findUnique({
-          where: { id: data.companyId, deletedAt: null },
-        });
-        if (!companyExists) {
-          throw new BadRequestException('Invalid company ID provided');
-        }
-      }
-
-      // Validate assigned user if provided
-      if (
-        data.assignedToId &&
-        data.assignedToId !== existingContact.assignedToId
-      ) {
-        const userExists = await this.prisma.user.findUnique({
-          where: { id: data.assignedToId, isActive: true },
-        });
-        if (!userExists) {
-          throw new BadRequestException('Invalid assigned user ID provided');
-        }
-      }
-
-      const { id: _, ...updateData } = data;
-
-      const contact = await this.prisma.contact.update({
-        where: { id },
-        data: updateData as any,
-        include: {
-          company: true,
-          assignedTo: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
+    // Validate email uniqueness if provided
+    if (data.email) {
+      const existingContact = await this.prisma.contact.findFirst({
+        where: {
+          email: data.email,
+          deletedAt: null,
         },
       });
-
-      this.logger.log(
-        `Contact updated: ${contact.firstName} ${contact.lastName}`,
-      );
-      return contact;
-    } catch (error) {
-      this.logger.error(`Failed to update contact: ${error.message}`);
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
+      if (existingContact) {
+        throw new BadRequestException('Contact with this email already exists');
       }
-      throw new BadRequestException('Failed to update contact');
     }
   }
 
-  async remove(id: string, currentUserId: string): Promise<Contact> {
-    try {
-      // Check if contact exists
-      const existingContact = await this.prisma.contact.findUnique({
-        where: { id, deletedAt: null },
+  private async validateUpdateInput(
+    id: string,
+    data: UpdateContactInput,
+    currentUserId: string,
+  ): Promise<void> {
+    const existingContact = await this.prisma.contact.findUnique({
+      where: { id, deletedAt: null },
+    });
+
+    if (!existingContact) {
+      throw new NotFoundException('Contact not found');
+    }
+
+    // Validate company if provided and changed
+    if (data.companyId && data.companyId !== existingContact.companyId) {
+      const company = await this.prisma.company.findUnique({
+        where: { id: data.companyId, deletedAt: null },
       });
-
-      if (!existingContact) {
-        throw new NotFoundException('Contact not found');
+      if (!company) {
+        throw new BadRequestException('Invalid company ID provided');
       }
+    }
 
-      // Check permissions
-      const canDelete = await this.rbacService.hasPermission(
-        currentUserId,
-        { resource: ResourceType.CONTACT, action: ActionType.DELETE },
-        existingContact,
-      );
-
-      if (!canDelete) {
-        throw new ForbiddenException(
-          'Insufficient permissions to delete this contact',
-        );
+    // Validate assigned user if provided and changed
+    if (data.assignedToId && data.assignedToId !== existingContact.assignedToId) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: data.assignedToId, isActive: true },
+      });
+      if (!user) {
+        throw new BadRequestException('Invalid assigned user ID provided');
       }
+    }
 
-      // Soft delete
-      const contact = await this.prisma.contact.update({
-        where: { id },
-        data: { deletedAt: new Date() },
-        include: {
-          company: true,
-          assignedTo: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
+    // Validate email uniqueness if provided and changed
+    if (data.email && data.email !== existingContact.email) {
+      const existingContactWithEmail = await this.prisma.contact.findFirst({
+        where: {
+          email: data.email,
+          deletedAt: null,
+          id: { not: id },
         },
       });
-
-      this.logger.log(
-        `Contact deleted: ${contact.firstName} ${contact.lastName}`,
-      );
-      return contact;
-    } catch (error) {
-      this.logger.error(`Failed to delete contact: ${error.message}`);
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
+      if (existingContactWithEmail) {
+        throw new BadRequestException('Contact with this email already exists');
       }
-      throw new BadRequestException('Failed to delete contact');
     }
   }
 
+  private getDefaultOrderBy() {
+    return { lastName: 'asc' as const, firstName: 'asc' as const };
+  }
+
+  // Business logic methods
+  /**
+   * Assign contact to a user
+   */
   async assignToUser(
     contactId: string,
     userId: string,
@@ -407,73 +260,80 @@ export class ContactsService {
   ): Promise<Contact> {
     try {
       // Check if contact exists
-      const existingContact = await this.prisma.contact.findUnique({
-        where: { id: contactId, deletedAt: null },
-      });
-
-      if (!existingContact) {
-        throw new NotFoundException('Contact not found');
-      }
-
-      // Check permissions
-      const canAssign = await this.rbacService.hasPermission(currentUserId, {
-        resource: ResourceType.CONTACT,
-        action: ActionType.ASSIGN,
-      });
-
-      if (!canAssign) {
-        throw new ForbiddenException(
-          'Insufficient permissions to assign contacts',
-        );
-      }
+      const existingContact = await this.findOne(contactId, currentUserId);
 
       // Check if user exists
-      const userExists = await this.prisma.user.findUnique({
+      const user = await this.prisma.user.findUnique({
         where: { id: userId, isActive: true },
       });
 
-      if (!userExists) {
+      if (!user) {
         throw new BadRequestException('Invalid user ID provided');
       }
 
-      const contact = await this.prisma.contact.update({
-        where: { id: contactId },
-        data: { assignedToId: userId },
-        include: {
-          company: true,
-          assignedTo: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-          createdBy: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
-            },
-          },
-        },
-      });
+      // Update contact
+      const updatedContact = await this.update(
+        contactId,
+        { id: contactId, assignedToId: userId },
+        currentUserId,
+      );
 
       this.logger.log(
-        `Contact assigned: ${contact.firstName} ${contact.lastName} to ${userExists.firstName} ${userExists.lastName}`,
+        `Contact assigned: ${existingContact.firstName} ${existingContact.lastName} to ${user.firstName} ${user.lastName}`,
       );
-      return contact;
+
+      return updatedContact;
     } catch (error) {
       this.logger.error(`Failed to assign contact: ${error.message}`);
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException ||
-        error instanceof BadRequestException
-      ) {
-        throw error;
-      }
-      throw new BadRequestException('Failed to assign contact');
+      throw error;
     }
+  }
+
+  /**
+   * Find contacts by company
+   */
+  async findByCompany(
+    companyId: string,
+    currentUserId: string,
+    pagination?: { take?: number; skip?: number },
+  ): Promise<Contact[]> {
+    const filters = await this.buildWhereClause(
+      { companyId },
+      currentUserId,
+    );
+    
+    const contacts = await this.prisma.contact.findMany({
+      where: filters,
+      include: this.getIncludeOptions(),
+      take: pagination?.take,
+      skip: pagination?.skip,
+      orderBy: this.getDefaultOrderBy(),
+    });
+
+    return ContactMapper.toDomainArray(contacts);
+  }
+
+  /**
+   * Find contacts by assigned user
+   */
+  async findByAssignedUser(
+    assignedToId: string,
+    currentUserId: string,
+    pagination?: { take?: number; skip?: number },
+  ): Promise<Contact[]> {
+    const filters = await this.buildWhereClause(
+      { assignedToId },
+      currentUserId,
+    );
+    
+    const contacts = await this.prisma.contact.findMany({
+      where: filters,
+      include: this.getIncludeOptions(),
+      take: pagination?.take,
+      skip: pagination?.skip,
+      orderBy: this.getDefaultOrderBy(),
+    });
+
+    return ContactMapper.toDomainArray(contacts);
   }
 }

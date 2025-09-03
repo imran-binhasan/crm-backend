@@ -1,203 +1,213 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { Note as PrismaNote } from '@prisma/client';
+import { BaseService } from '../common/services/base.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
+import { ResourceType } from '../common/rbac/permission.types';
 import { CreateNoteInput } from './dto/create-note.input';
 import { UpdateNoteInput } from './dto/update-note.input';
-import { ResourceType, ActionType } from '../common/rbac/permission.types';
-import { Note } from '@prisma/client';
+import { Note } from './entities/note.entity';
+import { NoteMapper } from './mappers/note.mapper';
 
 @Injectable()
-export class NotesService {
-  private readonly logger = new Logger(NotesService.name);
+export class NotesService extends BaseService<
+  Note,
+  CreateNoteInput,
+  UpdateNoteInput
+> {
+  protected readonly resourceType = ResourceType.NOTE;
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly rbacService: RbacService,
-  ) {}
+    prisma: PrismaService,
+    rbacService: RbacService,
+  ) {
+    super(prisma, rbacService, NotesService.name);
+  }
 
-  async create(data: CreateNoteInput, currentUserId: string): Promise<Note> {
-    const canCreate = await this.rbacService.hasPermission(currentUserId, {
-      resource: ResourceType.NOTE,
-      action: ActionType.CREATE,
-    });
-    if (!canCreate) {
-      throw new ForbiddenException('Insufficient permissions to create note');
-    }
+  protected mapToDomain(prismaEntity: any): Note {
+    return NoteMapper.toDomain(prismaEntity);
+  }
 
+  protected async performCreate(data: CreateNoteInput, currentUserId: string): Promise<Note> {
     const noteData = {
       ...data,
       createdById: currentUserId,
-      tags: data.tags || [],
     };
 
-    return this.prisma.note.create({
+    const result = await this.prisma.note.create({
       data: noteData as any,
-      include: {
-        contact: { select: { id: true, firstName: true, lastName: true } },
-        company: { select: { id: true, name: true } },
-        lead: { select: { id: true, title: true } },
-        deal: { select: { id: true, title: true } },
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
+      include: this.getIncludeOptions(),
+    });
+
+    return this.mapToDomain(result);
+  }
+
+  protected async performFindMany(options: any): Promise<Note[]> {
+    const result = await this.prisma.note.findMany({
+      ...options,
+      include: this.getIncludeOptions(),
+    });
+
+    return result.map(note => this.mapToDomain(note));
+  }
+
+  protected async performFindUnique(id: string): Promise<Note | null> {
+    const result = await this.prisma.note.findUnique({
+      where: { id, deletedAt: null },
+      include: this.getIncludeOptions(),
+    });
+
+    return result ? this.mapToDomain(result) : null;
+  }
+
+  protected async performUpdate(id: string, data: UpdateNoteInput, currentUserId: string): Promise<Note> {
+    const { id: _, ...updateData } = data;
+
+    const result = await this.prisma.note.update({
+      where: { id },
+      data: updateData as any,
+      include: this.getIncludeOptions(),
+    });
+
+    return this.mapToDomain(result);
+  }
+
+  protected async performSoftDelete(id: string, currentUserId: string): Promise<void> {
+    await this.prisma.note.update({
+      where: { id },
+      data: { deletedAt: new Date() },
     });
   }
 
-  async findAll(
-    currentUserId: string,
-    take?: number,
-    skip?: number,
-  ): Promise<Note[]> {
-    const hasPermission = await this.rbacService.hasPermission(currentUserId, {
-      resource: ResourceType.NOTE,
-      action: ActionType.READ,
+  protected async performHardDelete(id: string): Promise<void> {
+    await this.prisma.note.delete({
+      where: { id },
     });
-    if (!hasPermission) {
-      throw new ForbiddenException('Insufficient permissions to access notes');
-    }
+  }
 
-    const filters = await this.rbacService.getPermissionFilters(
-      currentUserId,
-      ResourceType.NOTE,
-    );
+  protected async performCount(options: any): Promise<number> {
+    return this.prisma.note.count(options);
+  }
 
-    return this.prisma.note.findMany({
+  private getIncludeOptions() {
+    return {
+      contact: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+      company: {
+        select: { id: true, name: true },
+      },
+      lead: {
+        select: { id: true, title: true, status: true },
+      },
+      deal: {
+        select: { id: true, title: true, stage: true, value: true },
+      },
+      createdBy: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+    };
+  }
+
+  // Business-specific methods
+  async findNotesByContact(contactId: string, currentUserId: string): Promise<Note[]> {
+    const filters = await this.rbacService.getPermissionFilters(currentUserId, this.resourceType);
+    const prismaNotes = await this.prisma.note.findMany({
       where: {
-        deletedAt: null,
         ...filters,
+        contactId,
+        deletedAt: null,
         OR: [{ isPrivate: false }, { createdById: currentUserId }],
       },
-      include: {
-        contact: { select: { id: true, firstName: true, lastName: true } },
-        company: { select: { id: true, name: true } },
-        lead: { select: { id: true, title: true } },
-        deal: { select: { id: true, title: true } },
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
-      take,
-      skip,
+      include: this.getIncludeOptions(),
       orderBy: { createdAt: 'desc' },
     });
+
+    return prismaNotes.map(note => this.mapToDomain(note));
   }
 
-  async findOne(id: string, currentUserId: string): Promise<Note> {
-    const note = await this.prisma.note.findUnique({
-      where: { id, deletedAt: null },
-      include: {
-        contact: true,
-        company: true,
-        lead: true,
-        deal: true,
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
+  async findNotesByCompany(companyId: string, currentUserId: string): Promise<Note[]> {
+    const filters = await this.rbacService.getPermissionFilters(currentUserId, this.resourceType);
+    const prismaNotes = await this.prisma.note.findMany({
+      where: {
+        ...filters,
+        companyId,
+        deletedAt: null,
+        OR: [{ isPrivate: false }, { createdById: currentUserId }],
       },
+      include: this.getIncludeOptions(),
+      orderBy: { createdAt: 'desc' },
     });
 
+    return prismaNotes.map(note => this.mapToDomain(note));
+  }
+
+  async findNotesByLead(leadId: string, currentUserId: string): Promise<Note[]> {
+    const filters = await this.rbacService.getPermissionFilters(currentUserId, this.resourceType);
+    const prismaNotes = await this.prisma.note.findMany({
+      where: {
+        ...filters,
+        leadId,
+        deletedAt: null,
+        OR: [{ isPrivate: false }, { createdById: currentUserId }],
+      },
+      include: this.getIncludeOptions(),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return prismaNotes.map(note => this.mapToDomain(note));
+  }
+
+  async findNotesByDeal(dealId: string, currentUserId: string): Promise<Note[]> {
+    const filters = await this.rbacService.getPermissionFilters(currentUserId, this.resourceType);
+    const prismaNotes = await this.prisma.note.findMany({
+      where: {
+        ...filters,
+        dealId,
+        deletedAt: null,
+        OR: [{ isPrivate: false }, { createdById: currentUserId }],
+      },
+      include: this.getIncludeOptions(),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return prismaNotes.map(note => this.mapToDomain(note));
+  }
+
+  // Override findAll to include privacy logic
+  async findAll(
+    currentUserId: string,
+    pagination?: any,
+    filters?: any,
+  ): Promise<any> {
+    // Add privacy filter to the where clause
+    const additionalWhere = {
+      OR: [{ isPrivate: false }, { createdById: currentUserId }],
+    };
+
+    // Merge with existing filters if provided
+    const mergedFilters = filters ? {
+      ...filters,
+      additionalWhere,
+    } : { additionalWhere };
+
+    return super.findAll(currentUserId, pagination, mergedFilters);
+  }
+
+  // Override findOne to include privacy logic
+  async findOne(id: string, currentUserId: string): Promise<Note> {
+    const note = await this.performFindUnique(id);
+    
     if (!note) {
-      throw new NotFoundException('Note not found');
+      throw new Error('Note not found');
     }
 
     // Check if note is private and user is not the creator
     if (note.isPrivate && note.createdById !== currentUserId) {
-      throw new ForbiddenException('Cannot access private note');
+      throw new Error('Cannot access private note');
     }
 
-    const canRead = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.NOTE, action: ActionType.READ },
-      note,
-    );
-    if (!canRead) {
-      throw new ForbiddenException(
-        'Insufficient permissions to view this note',
-      );
-    }
-
-    return note;
-  }
-
-  async update(
-    id: string,
-    data: UpdateNoteInput,
-    currentUserId: string,
-  ): Promise<Note> {
-    const existingNote = await this.prisma.note.findUnique({
-      where: { id, deletedAt: null },
-    });
-
-    if (!existingNote) {
-      throw new NotFoundException('Note not found');
-    }
-
-    const canUpdate = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.NOTE, action: ActionType.UPDATE },
-      existingNote,
-    );
-    if (!canUpdate) {
-      throw new ForbiddenException(
-        'Insufficient permissions to update this note',
-      );
-    }
-
-    const { id: _, ...updateData } = data;
-
-    return this.prisma.note.update({
-      where: { id },
-      data: updateData as any,
-      include: {
-        contact: true,
-        company: true,
-        lead: true,
-        deal: true,
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
-    });
-  }
-
-  async remove(id: string, currentUserId: string): Promise<Note> {
-    const existingNote = await this.prisma.note.findUnique({
-      where: { id, deletedAt: null },
-    });
-
-    if (!existingNote) {
-      throw new NotFoundException('Note not found');
-    }
-
-    const canDelete = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.NOTE, action: ActionType.DELETE },
-      existingNote,
-    );
-    if (!canDelete) {
-      throw new ForbiddenException(
-        'Insufficient permissions to delete this note',
-      );
-    }
-
-    return this.prisma.note.update({
-      where: { id },
-      data: { deletedAt: new Date() },
-      include: {
-        contact: true,
-        company: true,
-        lead: true,
-        deal: true,
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
-    });
+    // Use BaseService permission check
+    return super.findOne(id, currentUserId);
   }
 }

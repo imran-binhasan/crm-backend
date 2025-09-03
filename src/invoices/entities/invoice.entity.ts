@@ -25,9 +25,6 @@ export class InvoiceItem {
 
   @Field(() => Float, { nullable: true })
   taxAmount?: number;
-
-  @Field(() => String, { nullable: true })
-  unit?: string; // hours, pieces, etc.
 }
 
 @ObjectType()
@@ -39,7 +36,7 @@ export class Invoice {
   invoiceNumber: string;
 
   @Field(() => String)
-  status: string; // DRAFT, SENT, PAID, OVERDUE, CANCELLED
+  status: string;
 
   @Field(() => Date)
   issueDate: Date;
@@ -63,28 +60,27 @@ export class Invoice {
   @Field(() => Float)
   subtotal: number;
 
-  @Field(() => Float, { defaultValue: 0 })
-  taxAmount: number;
+  @Field(() => Float, { nullable: true })
+  taxAmount?: number;
 
-  @Field(() => Float, { defaultValue: 0 })
-  discountAmount: number;
+  @Field(() => Float, { nullable: true })
+  discountAmount?: number;
 
   @Field(() => Float)
   totalAmount: number;
 
-  @Field(() => Float, { defaultValue: 0 })
-  paidAmount: number;
+  @Field(() => Float, { nullable: true })
+  paidAmount?: number;
 
   @Field(() => Float)
   balanceAmount: number;
 
-  @Field(() => String, { defaultValue: 'USD' })
-  currency: string;
+  @Field(() => String, { nullable: true })
+  currency?: string;
 
   @Field(() => Float, { nullable: true })
   exchangeRate?: number;
 
-  // Payment details
   @Field(() => String, { nullable: true })
   paymentMethod?: string;
 
@@ -98,8 +94,8 @@ export class Invoice {
   @Field(() => String)
   clientId: string;
 
-  @Field(() => Client)
-  client: Client;
+  @Field(() => Client, { nullable: true })
+  client?: Client;
 
   @Field(() => String, { nullable: true })
   projectId?: string;
@@ -111,8 +107,8 @@ export class Invoice {
   @Field(() => String)
   createdById: string;
 
-  @Field(() => User)
-  createdBy: User;
+  @Field(() => User, { nullable: true })
+  createdBy?: User;
 
   @Field(() => Date)
   createdAt: Date;
@@ -121,5 +117,5 @@ export class Invoice {
   updatedAt: Date;
 
   @Field(() => Date, { nullable: true })
-  deletedAt?: Date;
+  deletedAt?: Date | null;
 }

@@ -2,16 +2,36 @@ import { Field, InputType } from '@nestjs/graphql';
 import {
   IsString,
   IsOptional,
-  IsBoolean,
   IsUUID,
   IsNumber,
   IsDateString,
   Min,
   Max,
+  IsEnum,
 } from 'class-validator';
+import { BaseCreateDto } from '../../common/dto/base.dto';
+
+enum DealStage {
+  PROSPECTING = 'PROSPECTING',
+  QUALIFICATION = 'QUALIFICATION',
+  NEEDS_ANALYSIS = 'NEEDS_ANALYSIS',
+  VALUE_PROPOSITION = 'VALUE_PROPOSITION',
+  DECISION_MAKERS = 'DECISION_MAKERS',
+  PROPOSAL = 'PROPOSAL',
+  NEGOTIATION = 'NEGOTIATION',
+  CLOSED_WON = 'CLOSED_WON',
+  CLOSED_LOST = 'CLOSED_LOST',
+}
+
+enum DealPriority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
 
 @InputType()
-export class CreateDealInput {
+export class CreateDealInput extends BaseCreateDto {
   @Field()
   @IsString()
   title: string;
@@ -43,8 +63,8 @@ export class CreateDealInput {
 
   @Field({ nullable: true })
   @IsOptional()
-  @IsString()
-  stage?: string;
+  @IsEnum(DealStage)
+  stage?: DealStage;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -55,8 +75,8 @@ export class CreateDealInput {
 
   @Field({ nullable: true })
   @IsOptional()
-  @IsString()
-  priority?: string;
+  @IsEnum(DealPriority)
+  priority?: DealPriority;
 
   @Field({ nullable: true })
   @IsOptional()
@@ -67,14 +87,4 @@ export class CreateDealInput {
   @IsOptional()
   @IsDateString()
   actualCloseDate?: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsString()
-  description?: string;
-
-  @Field({ nullable: true })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
 }

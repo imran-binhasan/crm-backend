@@ -10,6 +10,7 @@ import { RequireResource } from '../common/decorators/permissions.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { ResourceType, ActionType } from '../common/rbac/permission.types';
 import { User } from '../users/entities/user.entity';
+import { PaginatedResponse } from '../common/interfaces/base.interface';
 
 @Resolver(() => Lead)
 @UseGuards(JwtAuthGuard)
@@ -19,12 +20,13 @@ export class LeadsResolver {
   @Query(() => [Lead], { name: 'leads' })
   @UseGuards(PermissionGuard)
   @RequireResource(ResourceType.LEAD, ActionType.READ)
-  findAll(
+  async findAll(
     @CurrentUser() currentUser: User,
-    @Args('take', { type: () => Number, nullable: true }) take?: number,
-    @Args('skip', { type: () => Number, nullable: true }) skip?: number,
+    @Args('page', { type: () => Number, nullable: true, defaultValue: 1 }) page?: number,
+    @Args('limit', { type: () => Number, nullable: true, defaultValue: 10 }) limit?: number,
   ) {
-    return this.leadsService.findAll(currentUser.id, take, skip);
+    const result = await this.leadsService.findAll(currentUser.id, { page, limit });
+    return result.data;
   }
 
   @Query(() => Lead, { name: 'lead' })

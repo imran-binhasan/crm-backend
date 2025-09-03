@@ -1,4 +1,4 @@
-import { InputType, Field, Int } from '@nestjs/graphql';
+import { InputType, Field, Int, registerEnumType } from '@nestjs/graphql';
 import {
   IsString,
   IsOptional,
@@ -7,39 +7,80 @@ import {
   IsInt,
   Min,
   IsNotEmpty,
+  IsUUID,
 } from 'class-validator';
+
+// Define GraphQL enum types
+export enum ActivityType {
+  CALL = 'CALL',
+  EMAIL = 'EMAIL',
+  MEETING = 'MEETING',
+  TASK = 'TASK',
+  NOTE = 'NOTE',
+  DEMO = 'DEMO',
+  FOLLOW_UP = 'FOLLOW_UP',
+}
+
+export enum ActivityStatus {
+  SCHEDULED = 'SCHEDULED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
+
+// Register enums with GraphQL
+registerEnumType(ActivityType, {
+  name: 'ActivityType',
+  description: 'Activity type values',
+});
+
+registerEnumType(ActivityStatus, {
+  name: 'ActivityStatus',
+  description: 'Activity status values',
+});
+
+registerEnumType(Priority, {
+  name: 'Priority',
+  description: 'Priority values',
+});
 
 @InputType()
 export class CreateActivityInput {
-  @Field(() => String)
-  @IsString()
+  @Field(() => ActivityType)
+  @IsEnum(ActivityType)
   @IsNotEmpty()
-  type: string;
+  type: ActivityType;
 
   @Field(() => String)
   @IsString()
   @IsNotEmpty()
-  title: string;
+  subject: string;
 
   @Field(() => String, { nullable: true })
   @IsString()
   @IsOptional()
   description?: string;
 
-  @Field(() => String, { nullable: true })
-  @IsDateString()
+  @Field(() => Date, { nullable: true })
   @IsOptional()
-  scheduledAt?: string;
+  scheduledAt?: Date;
 
-  @Field(() => String)
-  @IsEnum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'])
+  @Field(() => ActivityStatus, { defaultValue: ActivityStatus.SCHEDULED })
+  @IsEnum(ActivityStatus)
   @IsNotEmpty()
-  status: string;
+  status: ActivityStatus;
 
-  @Field(() => String)
-  @IsEnum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+  @Field(() => Priority, { defaultValue: Priority.MEDIUM })
+  @IsEnum(Priority)
   @IsNotEmpty()
-  priority: string;
+  priority: Priority;
 
   @Field(() => Int, { defaultValue: 0 })
   @IsInt()
@@ -62,34 +103,33 @@ export class CreateActivityInput {
   @IsOptional()
   followUpAction?: string;
 
-  @Field(() => String, { nullable: true })
-  @IsDateString()
+  @Field(() => Date, { nullable: true })
   @IsOptional()
-  followUpDate?: string;
+  followUpDate?: Date;
 
   // Related entities
   @Field(() => String, { nullable: true })
-  @IsString()
   @IsOptional()
+  @IsUUID()
   contactId?: string;
 
   @Field(() => String, { nullable: true })
-  @IsString()
   @IsOptional()
+  @IsUUID()
   companyId?: string;
 
   @Field(() => String, { nullable: true })
-  @IsString()
   @IsOptional()
+  @IsUUID()
   leadId?: string;
 
   @Field(() => String, { nullable: true })
-  @IsString()
   @IsOptional()
+  @IsUUID()
   dealId?: string;
 
   @Field(() => String, { nullable: true })
-  @IsString()
   @IsOptional()
+  @IsUUID()
   assignedToId?: string;
 }
