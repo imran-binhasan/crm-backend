@@ -1,7 +1,8 @@
-import { ObjectType, Field, ID } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
 import { User } from '../../users/entities/user.entity';
 import { Company } from '../../companies/entities/company.entity';
 import { Contact } from '../../contacts/entities/contact.entity';
+import { ClientType, ClientStatus } from '../dto/create-client.input';
 
 @ObjectType()
 export class Client {
@@ -26,11 +27,11 @@ export class Client {
   @Field(() => String, { nullable: true })
   industry?: string;
 
-  @Field(() => String)
-  type: string; // INDIVIDUAL, CORPORATE
+  @Field(() => ClientType)
+  type: ClientType;
 
-  @Field(() => String)
-  status: string; // ACTIVE, INACTIVE, SUSPENDED
+  @Field(() => ClientStatus)
+  status: ClientStatus;
 
   @Field(() => String, { nullable: true })
   taxId?: string;
@@ -47,9 +48,8 @@ export class Client {
   @Field(() => String, { nullable: true })
   notes?: string;
 
-  // Payment terms
-  @Field(() => Number, { defaultValue: 30 })
-  paymentTerms: number; // Days
+  @Field(() => Int, { defaultValue: 30 })
+  paymentTerms: number;
 
   @Field(() => String, { nullable: true })
   preferredCurrency?: string;

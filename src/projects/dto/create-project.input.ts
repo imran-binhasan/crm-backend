@@ -1,4 +1,4 @@
-import { InputType, Field, Float } from '@nestjs/graphql';
+import { InputType, Field, Float, registerEnumType } from '@nestjs/graphql';
 import {
   IsString,
   IsOptional,
@@ -9,7 +9,44 @@ import {
   Max,
   IsDateString,
   IsArray,
+  IsUUID,
 } from 'class-validator';
+
+export enum ProjectStatus {
+  PLANNING = 'PLANNING',
+  ACTIVE = 'ACTIVE',
+  ON_HOLD = 'ON_HOLD',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum Priority {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  URGENT = 'URGENT',
+}
+
+export enum ProjectType {
+  FIXED_PRICE = 'FIXED_PRICE',
+  TIME_AND_MATERIALS = 'TIME_AND_MATERIALS',
+  RETAINER = 'RETAINER',
+}
+
+registerEnumType(ProjectStatus, {
+  name: 'ProjectStatus',
+  description: 'Project status',
+});
+
+registerEnumType(Priority, {
+  name: 'Priority',
+  description: 'Priority level',
+});
+
+registerEnumType(ProjectType, {
+  name: 'ProjectType',
+  description: 'Project type',
+});
 
 @InputType()
 export class CreateProjectInput {
@@ -28,20 +65,20 @@ export class CreateProjectInput {
   @IsOptional()
   description?: string;
 
-  @Field(() => String, { defaultValue: 'PLANNING' })
-  @IsEnum(['PLANNING', 'ACTIVE', 'ON_HOLD', 'COMPLETED', 'CANCELLED'])
+  @Field(() => ProjectStatus, { defaultValue: ProjectStatus.PLANNING })
+  @IsEnum(ProjectStatus)
   @IsOptional()
-  status?: string;
+  status?: ProjectStatus;
 
-  @Field(() => String, { defaultValue: 'MEDIUM' })
-  @IsEnum(['LOW', 'MEDIUM', 'HIGH', 'URGENT'])
+  @Field(() => Priority, { defaultValue: Priority.MEDIUM })
+  @IsEnum(Priority)
   @IsOptional()
-  priority?: string;
+  priority?: Priority;
 
-  @Field(() => String, { nullable: true })
-  @IsEnum(['FIXED_PRICE', 'TIME_AND_MATERIALS', 'RETAINER'])
+  @Field(() => ProjectType, { nullable: true })
+  @IsEnum(ProjectType)
   @IsOptional()
-  type?: string;
+  type?: ProjectType;
 
   @Field(() => Float, { nullable: true })
   @IsNumber()
@@ -55,7 +92,7 @@ export class CreateProjectInput {
   @IsOptional()
   actualCost?: number;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String, { nullable: true, defaultValue: 'USD' })
   @IsString()
   @IsOptional()
   currency?: string;
@@ -88,18 +125,18 @@ export class CreateProjectInput {
   progress?: number;
 
   @Field(() => String)
-  @IsString()
+  @IsUUID()
   @IsNotEmpty()
   clientId: string;
 
   @Field(() => String, { nullable: true })
-  @IsString()
+  @IsUUID()
   @IsOptional()
   projectManagerId?: string;
 
   @Field(() => [String], { defaultValue: [] })
   @IsArray()
-  @IsString({ each: true })
+  @IsUUID('4', { each: true })
   @IsOptional()
   teamMemberIds?: string[];
 }

@@ -1,38 +1,33 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { BaseService } from '../common/services/base.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { RbacService } from '../common/rbac/rbac.service';
 import { CreateClientInput } from './dto/create-client.input';
 import { UpdateClientInput } from './dto/update-client.input';
-import { ResourceType, ActionType } from '../common/rbac/permission.types';
-import { Client } from '@prisma/client';
+import { Client } from './entities/client.entity';
+import { ClientMapper } from './mappers/client.mapper';
+import { ResourceType } from '../common/rbac/permission.types';
 
 @Injectable()
-export class ClientsService {
-  private readonly logger = new Logger(ClientsService.name);
+export class ClientsService extends BaseService<
+  Client,
+  CreateClientInput,
+  UpdateClientInput
+> {
+  protected readonly resourceType = ResourceType.CLIENT;
 
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly rbacService: RbacService,
-  ) {}
+    prisma: PrismaService,
+    rbacService: RbacService,
+  ) {
+    super(prisma, rbacService, ClientsService.name);
+  }
 
-  async create(
-    data: CreateClientInput,
-    currentUserId: string,
-  ): Promise<Client> {
-    const canCreate = await this.rbacService.hasPermission(currentUserId, {
-      resource: ResourceType.CLIENT,
-      action: ActionType.CREATE,
-    });
-    if (!canCreate) {
-      throw new ForbiddenException('Insufficient permissions to create client');
-    }
+  protected mapToDomain(prismaEntity: any): Client {
+    return ClientMapper.toDomain(prismaEntity);
+  }
 
+  protected async performCreate(data: CreateClientInput, currentUserId: string): Promise<Client> {
     // Check for duplicate client name
     if (data.name) {
       const existingClient = await this.prisma.client.findFirst({
@@ -50,123 +45,45 @@ export class ClientsService {
       ...data,
       code: clientCode,
       type: data.type as any,
-      status: (data.status as any) || 'ACTIVE',
+      status: data.status as any || 'ACTIVE',
       createdById: currentUserId,
       paymentTerms: data.paymentTerms || 30,
     };
 
-    return this.prisma.client.create({
+    const result = await this.prisma.client.create({
       data: clientData as any,
-      include: {
-        company: { select: { id: true, name: true } },
-        primaryContact: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        accountManager: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
+      include: this.getIncludeOptions(),
     });
+
+    return this.mapToDomain(result);
   }
 
-  async findAll(
-    currentUserId: string,
-    take?: number,
-    skip?: number,
-  ): Promise<Client[]> {
-    const hasPermission = await this.rbacService.hasPermission(currentUserId, {
-      resource: ResourceType.CLIENT,
-      action: ActionType.READ,
+  protected async performFindMany(options: any): Promise<Client[]> {
+    const result = await this.prisma.client.findMany({
+      ...options,
+      include: this.getIncludeOptions(),
     });
-    if (!hasPermission) {
-      throw new ForbiddenException(
-        'Insufficient permissions to access clients',
-      );
-    }
 
-    const filters = await this.rbacService.getPermissionFilters(
-      currentUserId,
-      ResourceType.CLIENT,
-    );
-
-    return this.prisma.client.findMany({
-      where: { deletedAt: null, ...filters },
-      include: {
-        company: { select: { id: true, name: true } },
-        primaryContact: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        accountManager: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
-      take,
-      skip,
-      orderBy: { createdAt: 'desc' },
-    });
+    return result.map(client => this.mapToDomain(client));
   }
 
-  async findOne(id: string, currentUserId: string): Promise<Client> {
-    const client = await this.prisma.client.findUnique({
+  protected async performFindUnique(id: string): Promise<Client | null> {
+    const result = await this.prisma.client.findUnique({
       where: { id, deletedAt: null },
-      include: {
-        company: true,
-        primaryContact: true,
-        accountManager: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
+      include: this.getIncludeOptions(),
     });
 
-    if (!client) {
-      throw new NotFoundException('Client not found');
-    }
-
-    const canRead = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.CLIENT, action: ActionType.READ },
-      client,
-    );
-    if (!canRead) {
-      throw new ForbiddenException(
-        'Insufficient permissions to view this client',
-      );
-    }
-
-    return client;
+    return result ? this.mapToDomain(result) : null;
   }
 
-  async update(
-    id: string,
-    data: UpdateClientInput,
-    currentUserId: string,
-  ): Promise<Client> {
+  protected async performUpdate(id: string, data: UpdateClientInput, currentUserId: string): Promise<Client> {
+    // Get existing client
     const existingClient = await this.prisma.client.findUnique({
       where: { id, deletedAt: null },
     });
 
     if (!existingClient) {
-      throw new NotFoundException('Client not found');
-    }
-
-    const canUpdate = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.CLIENT, action: ActionType.UPDATE },
-      existingClient,
-    );
-    if (!canUpdate) {
-      throw new ForbiddenException(
-        'Insufficient permissions to update this client',
-      );
+      throw new BadRequestException('Client not found');
     }
 
     // Check for duplicate name if name is being changed
@@ -181,42 +98,16 @@ export class ClientsService {
 
     const { id: _, ...updateData } = data;
 
-    return this.prisma.client.update({
+    const result = await this.prisma.client.update({
       where: { id },
       data: updateData as any,
-      include: {
-        company: true,
-        primaryContact: true,
-        accountManager: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
+      include: this.getIncludeOptions(),
     });
+
+    return this.mapToDomain(result);
   }
 
-  async remove(id: string, currentUserId: string): Promise<Client> {
-    const existingClient = await this.prisma.client.findUnique({
-      where: { id, deletedAt: null },
-    });
-
-    if (!existingClient) {
-      throw new NotFoundException('Client not found');
-    }
-
-    const canDelete = await this.rbacService.hasPermission(
-      currentUserId,
-      { resource: ResourceType.CLIENT, action: ActionType.DELETE },
-      existingClient,
-    );
-    if (!canDelete) {
-      throw new ForbiddenException(
-        'Insufficient permissions to delete this client',
-      );
-    }
-
+  protected async performSoftDelete(id: string, currentUserId: string): Promise<void> {
     // Check if client has associated projects or invoices
     const projectCount = await this.prisma.project.count({
       where: { clientId: id, deletedAt: null },
@@ -228,20 +119,136 @@ export class ClientsService {
       );
     }
 
-    return this.prisma.client.update({
+    await this.prisma.client.update({
       where: { id },
       data: { deletedAt: new Date() },
-      include: {
-        company: true,
-        primaryContact: true,
-        accountManager: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true },
-        },
-      },
     });
+  }
+
+  protected async performHardDelete(id: string): Promise<void> {
+    await this.prisma.client.delete({
+      where: { id },
+    });
+  }
+
+  protected async performCount(options: any): Promise<number> {
+    return this.prisma.client.count(options);
+  }
+
+  private getIncludeOptions() {
+    return {
+      company: { select: { id: true, name: true } },
+      primaryContact: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+      accountManager: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+      createdBy: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+    };
+  }
+
+  // Business methods
+  async getClientsByType(
+    type: string,
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Client[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const clients = await this.prisma.client.findMany({
+      where: { 
+        type: type as any,
+        deletedAt: null,
+        ...filters,
+      },
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { name: 'asc' },
+    });
+
+    return clients.map(client => this.mapToDomain(client));
+  }
+
+  async getClientsByStatus(
+    status: string,
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Client[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const clients = await this.prisma.client.findMany({
+      where: { 
+        status: status as any,
+        deletedAt: null,
+        ...filters,
+      },
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { name: 'asc' },
+    });
+
+    return clients.map(client => this.mapToDomain(client));
+  }
+
+  async getActiveClients(
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Client[]> {
+    return this.getClientsByStatus('ACTIVE', currentUserId, take, skip);
+  }
+
+  async getClientsByAccountManager(
+    accountManagerId: string,
+    currentUserId: string,
+    take?: number,
+    skip?: number,
+  ): Promise<Client[]> {
+    const filters = await this.rbacService.getPermissionFilters(
+      currentUserId,
+      this.resourceType,
+    );
+
+    const clients = await this.prisma.client.findMany({
+      where: { 
+        accountManagerId,
+        deletedAt: null,
+        ...filters,
+      },
+      include: this.getIncludeOptions(),
+      take,
+      skip,
+      orderBy: { name: 'asc' },
+    });
+
+    return clients.map(client => this.mapToDomain(client));
+  }
+
+  async updateClientStatus(
+    id: string,
+    status: string,
+    currentUserId: string,
+  ): Promise<Client> {
+    const client = await this.prisma.client.update({
+      where: { id },
+      data: { status: status as any },
+      include: this.getIncludeOptions(),
+    });
+
+    return this.mapToDomain(client);
   }
 
   private async generateClientCode(): Promise<string> {

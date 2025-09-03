@@ -1,6 +1,7 @@
-import { ObjectType, Field, ID, Float } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Float, Int } from '@nestjs/graphql';
 import { User } from '../../users/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
+import { ProjectStatus, Priority, ProjectType } from '../dto/create-project.input';
 
 @ObjectType()
 export class Project {
@@ -16,14 +17,14 @@ export class Project {
   @Field(() => String, { nullable: true })
   description?: string;
 
-  @Field(() => String)
-  status: string; // PLANNING, ACTIVE, ON_HOLD, COMPLETED, CANCELLED
+  @Field(() => ProjectStatus)
+  status: ProjectStatus;
 
-  @Field(() => String)
-  priority: string; // LOW, MEDIUM, HIGH, URGENT
+  @Field(() => Priority)
+  priority: Priority;
 
-  @Field(() => String, { nullable: true })
-  type?: string; // FIXED_PRICE, TIME_AND_MATERIALS, RETAINER
+  @Field(() => ProjectType, { nullable: true })
+  type?: ProjectType;
 
   @Field(() => Float, { nullable: true })
   budget?: number;
@@ -46,7 +47,7 @@ export class Project {
   @Field(() => Date, { nullable: true })
   actualEndDate?: Date;
 
-  @Field(() => Number, { defaultValue: 0 })
+  @Field(() => Int, { defaultValue: 0 })
   progress: number; // 0-100 percentage
 
   // Relations

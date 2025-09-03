@@ -32,7 +32,9 @@ export class ClientsResolver {
     @Args('skip', { type: () => Int, nullable: true }) skip?: number,
     @Context() context?: any,
   ) {
-    return this.clientsService.findAll(context.req.user.sub, take, skip);
+    const pagination = take ? { page: Math.floor((skip || 0) / take) + 1, limit: take } : undefined;
+    const result = await this.clientsService.findAll(context.req.user.sub, pagination);
+    return result.data;
   }
 
   @Query(() => Client, { name: 'client' })
@@ -60,7 +62,7 @@ export class ClientsResolver {
     );
   }
 
-  @Mutation(() => Client)
+  @Mutation(() => Boolean)
   async removeClient(
     @Args('id', { type: () => String }) id: string,
     @Context() context: any,
@@ -70,6 +72,86 @@ export class ClientsResolver {
       clientId: id,
     });
 
-    return this.clientsService.remove(id, context.req.user.sub);
+    await this.clientsService.remove(id, context.req.user.sub);
+    return true;
+  }
+
+  // Business query methods
+  @Query(() => [Client])
+  async clientsByType(
+    @Args('type', { type: () => String }) type: string,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @Context() context?: any,
+  ) {
+    return this.clientsService.getClientsByType(
+      type,
+      context.req.user.sub,
+      take,
+      skip,
+    );
+  }
+
+  @Query(() => [Client])
+  async clientsByStatus(
+    @Args('status', { type: () => String }) status: string,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @Context() context?: any,
+  ) {
+    return this.clientsService.getClientsByStatus(
+      status,
+      context.req.user.sub,
+      take,
+      skip,
+    );
+  }
+
+  @Query(() => [Client])
+  async activeClients(
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @Context() context?: any,
+  ) {
+    return this.clientsService.getActiveClients(
+      context.req.user.sub,
+      take,
+      skip,
+    );
+  }
+
+  @Query(() => [Client])
+  async clientsByAccountManager(
+    @Args('accountManagerId', { type: () => String }) accountManagerId: string,
+    @Args('take', { type: () => Int, nullable: true }) take?: number,
+    @Args('skip', { type: () => Int, nullable: true }) skip?: number,
+    @Context() context?: any,
+  ) {
+    return this.clientsService.getClientsByAccountManager(
+      accountManagerId,
+      context.req.user.sub,
+      take,
+      skip,
+    );
+  }
+
+  // Business mutation methods
+  @Mutation(() => Client)
+  async updateClientStatus(
+    @Args('id', { type: () => String }) id: string,
+    @Args('status', { type: () => String }) status: string,
+    @Context() context: any,
+  ) {
+    this.logger.log('GraphQL: Updating client status', {
+      userId: context.req.user.sub,
+      clientId: id,
+      status,
+    });
+
+    return this.clientsService.updateClientStatus(
+      id,
+      status,
+      context.req.user.sub,
+    );
   }
 }

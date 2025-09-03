@@ -1,4 +1,4 @@
-import { InputType, Field, Int } from '@nestjs/graphql';
+import { InputType, Field, Int, registerEnumType } from '@nestjs/graphql';
 import {
   IsString,
   IsOptional,
@@ -7,7 +7,29 @@ import {
   IsNotEmpty,
   IsNumber,
   Min,
+  IsUUID,
 } from 'class-validator';
+
+export enum ClientType {
+  INDIVIDUAL = 'INDIVIDUAL',
+  CORPORATE = 'CORPORATE',
+}
+
+export enum ClientStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+}
+
+registerEnumType(ClientType, {
+  name: 'ClientType',
+  description: 'Client type classification',
+});
+
+registerEnumType(ClientStatus, {
+  name: 'ClientStatus',
+  description: 'Client status',
+});
 
 @InputType()
 export class CreateClientInput {
@@ -41,15 +63,15 @@ export class CreateClientInput {
   @IsOptional()
   industry?: string;
 
-  @Field(() => String)
-  @IsEnum(['INDIVIDUAL', 'CORPORATE'])
+  @Field(() => ClientType)
+  @IsEnum(ClientType)
   @IsNotEmpty()
-  type: string;
+  type: ClientType;
 
-  @Field(() => String, { defaultValue: 'ACTIVE' })
-  @IsEnum(['ACTIVE', 'INACTIVE', 'SUSPENDED'])
+  @Field(() => ClientStatus, { defaultValue: ClientStatus.ACTIVE })
+  @IsEnum(ClientStatus)
   @IsOptional()
-  status?: string;
+  status?: ClientStatus;
 
   @Field(() => String, { nullable: true })
   @IsString()
@@ -82,23 +104,23 @@ export class CreateClientInput {
   @IsOptional()
   paymentTerms?: number;
 
-  @Field(() => String, { nullable: true })
+  @Field(() => String, { nullable: true, defaultValue: 'USD' })
   @IsString()
   @IsOptional()
   preferredCurrency?: string;
 
   @Field(() => String, { nullable: true })
-  @IsString()
+  @IsUUID()
   @IsOptional()
   companyId?: string;
 
   @Field(() => String, { nullable: true })
-  @IsString()
+  @IsUUID()
   @IsOptional()
   primaryContactId?: string;
 
   @Field(() => String, { nullable: true })
-  @IsString()
+  @IsUUID()
   @IsOptional()
   accountManagerId?: string;
 }
