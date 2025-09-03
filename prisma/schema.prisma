@@ -329,6 +329,296 @@ model Note {
   @@map("notes")
 }
 
+// New Business Models
+
+model Client {
+  id                String @id @default(uuid())
+  name              String @db.VarChar(255)
+  code              String? @unique @db.VarChar(50)
+  email             String? @db.VarChar(255)
+  phone             String? @db.VarChar(20)
+  website           String?
+  industry          String? @db.VarChar(100)
+  type              ClientType @default(CORPORATE)
+  status            ClientStatus @default(ACTIVE)
+  taxId             String? @db.VarChar(50)
+  billingAddress    String?
+  shippingAddress   String?
+  description       String?
+  notes             String?
+  paymentTerms      Int @default(30)
+  preferredCurrency String? @default("USD") @db.VarChar(3)
+  
+  // Relations
+  companyId        String?
+  primaryContactId String?
+  accountManagerId String?
+  createdById      String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  company        Company? @relation(fields: [companyId], references: [id])
+  primaryContact Contact? @relation(fields: [primaryContactId], references: [id])
+  accountManager User?    @relation("ClientAccountManager", fields: [accountManagerId], references: [id])
+  createdBy      User     @relation("ClientCreatedBy", fields: [createdById], references: [id])
+  
+  projects       Project[]
+  invoices       Invoice[]
+
+  @@map("clients")
+}
+
+model Project {
+  id              String @id @default(uuid())
+  name            String @db.VarChar(255)
+  code            String? @unique @db.VarChar(50)
+  description     String?
+  status          ProjectStatus @default(PLANNING)
+  priority        Priority @default(MEDIUM)
+  type            ProjectType? @default(FIXED_PRICE)
+  budget          Decimal? @db.Decimal(15, 2)
+  actualCost      Decimal? @db.Decimal(15, 2)
+  currency        String? @default("USD") @db.VarChar(3)
+  startDate       DateTime?
+  endDate         DateTime?
+  actualStartDate DateTime?
+  actualEndDate   DateTime?
+  progress        Int @default(0) // 0-100
+  
+  // Relations
+  clientId         String
+  projectManagerId String?
+  createdById      String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  client         Client @relation(fields: [clientId], references: [id])
+  projectManager User?  @relation("ProjectManager", fields: [projectManagerId], references: [id])
+  createdBy      User   @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  
+  teamMembers    ProjectTeamMember[]
+  invoices       Invoice[]
+
+  @@map("projects")
+}
+
+model ProjectTeamMember {
+  id        String @id @default(uuid())
+  projectId String
+  userId    String
+  role      String? @db.VarChar(100)
+  joinDate  DateTime @default(now())
+  
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation("ProjectTeamMember", fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+  @@map("project_team_members")
+}
+
+model Employee {
+  id               String @id @default(uuid())
+  employeeId       String @unique @db.VarChar(50)
+  firstName        String @db.VarChar(50)
+  lastName         String @db.VarChar(50)
+  email            String? @db.VarChar(255)
+  phone            String? @db.VarChar(20)
+  personalEmail    String? @db.VarChar(255)
+  dateOfBirth      DateTime?
+  gender           Gender?
+  maritalStatus    MaritalStatus?
+  address          String?
+  emergencyContact String? @db.VarChar(255)
+  emergencyPhone   String? @db.VarChar(20)
+  
+  // Employment details
+  department       String @db.VarChar(100)
+  position         String @db.VarChar(100)
+  employmentType   EmploymentType @default(FULL_TIME)
+  status           EmployeeStatus @default(ACTIVE)
+  hireDate         DateTime
+  terminationDate  DateTime?
+  salary           Decimal? @db.Decimal(15, 2)
+  salaryType       SalaryType?
+  workLocation     WorkLocation?
+  weeklyHours      Int @default(40)
+  
+  // Relations
+  managerId   String?
+  userId      String?
+  createdById String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  manager       Employee?    @relation("EmployeeManager", fields: [managerId], references: [id])
+  directReports Employee[]   @relation("EmployeeManager")
+  user          User?        @relation("EmployeeUser", fields: [userId], references: [id])
+  createdBy     User         @relation("EmployeeCreatedBy", fields: [createdById], references: [id])
+  
+  attendance    Attendance[]
+
+  @@map("employees")
+}
+
+model Attendance {
+  id              String @id @default(uuid())
+  date            DateTime @db.Date
+  checkIn         DateTime?
+  checkOut        DateTime?
+  hoursWorked     Decimal? @db.Decimal(5, 2)
+  breakTime       Decimal? @db.Decimal(5, 2) // in minutes
+  status          AttendanceStatus @default(PRESENT)
+  workLocation    String? @db.VarChar(100)
+  notes           String?
+  reasonForAbsence String?
+  isOvertime      Boolean @default(false)
+  overtimeHours   Decimal? @db.Decimal(5, 2)
+  isHoliday       Boolean @default(false)
+  isWeekend       Boolean @default(false)
+  
+  // Geo-location
+  latitude        Decimal? @db.Decimal(10, 8)
+  longitude       Decimal? @db.Decimal(11, 8)
+  ipAddress       String? @db.VarChar(45)
+  
+  // Relations
+  employeeId      String
+  approvedById    String?
+  createdById     String?
+  
+  // Approval
+  approvedAt      DateTime?
+  approvalStatus  ApprovalStatus @default(PENDING)
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  approvedBy User?    @relation("AttendanceApprovedBy", fields: [approvedById], references: [id])
+  createdBy  User?    @relation("AttendanceCreatedBy", fields: [createdById], references: [id])
+
+  @@unique([employeeId, date])
+  @@map("attendance")
+}
+
+model Invoice {
+  id               String @id @default(uuid())
+  invoiceNumber    String @unique @db.VarChar(50)
+  status           InvoiceStatus @default(DRAFT)
+  issueDate        DateTime
+  dueDate          DateTime
+  paidDate         DateTime?
+  description      String?
+  notes            String?
+  terms            String?
+  
+  // Financial details
+  subtotal         Decimal @db.Decimal(15, 2)
+  taxAmount        Decimal @default(0) @db.Decimal(15, 2)
+  discountAmount   Decimal @default(0) @db.Decimal(15, 2)
+  totalAmount      Decimal @db.Decimal(15, 2)
+  paidAmount       Decimal @default(0) @db.Decimal(15, 2)
+  balanceAmount    Decimal @db.Decimal(15, 2)
+  currency         String @default("USD") @db.VarChar(3)
+  exchangeRate     Decimal? @db.Decimal(10, 6)
+  
+  // Payment details
+  paymentMethod    String? @db.VarChar(50)
+  paymentReference String? @db.VarChar(255)
+  
+  // Relations
+  clientId    String
+  projectId   String?
+  createdById String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  client    Client        @relation(fields: [clientId], references: [id])
+  project   Project?      @relation(fields: [projectId], references: [id])
+  createdBy User          @relation("InvoiceCreatedBy", fields: [createdById], references: [id])
+  
+  items     InvoiceItem[]
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id         String @id @default(uuid())
+  description String @db.VarChar(255)
+  quantity   Decimal @db.Decimal(10, 2)
+  unitPrice  Decimal @db.Decimal(15, 2)
+  totalPrice Decimal @db.Decimal(15, 2)
+  taxRate    Decimal? @db.Decimal(5, 2)
+  taxAmount  Decimal? @db.Decimal(15, 2)
+  unit       String? @db.VarChar(50)
+  
+  // Relations
+  invoiceId String
+  
+  // Relations
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@map("invoice_items")
+}
+
+model Report {
+  id               String @id @default(uuid())
+  name             String @db.VarChar(255)
+  description      String?
+  type             ReportType
+  format           ReportFormat @default(PDF)
+  status           ReportStatus @default(PENDING)
+  startDate        DateTime?
+  endDate          DateTime?
+  filters          Json? // Store filters as JSON
+  columns          Json? // Store column selection as JSON
+  query            String? // For custom reports
+  filePath         String?
+  fileUrl          String?
+  fileSize         BigInt?
+  generatedAt      DateTime?
+  errorMessage     String?
+  isScheduled      Boolean @default(false)
+  schedulePattern  String? // Cron pattern
+  nextRunAt        DateTime?
+  lastRunAt        DateTime?
+  emailOnCompletion Boolean @default(false)
+  emailRecipients  Json? // Store email list as JSON
+  
+  // Relations
+  createdById String
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  createdBy User @relation("ReportCreatedBy", fields: [createdById], references: [id])
+
+  @@map("reports")
+}
+
 // Enums
 enum ContactStatus {
   ACTIVE
