@@ -44,6 +44,19 @@ model User {
   assignedActivities Activity[] @relation("ActivityAssignedUser")
   notes            Note[]
 
+  // New relations
+  clientsAsAccountManager Client[] @relation("ClientAccountManager")
+  createdClients         Client[] @relation("ClientCreatedBy")
+  projectsAsManager      Project[] @relation("ProjectManager")
+  createdProjects        Project[] @relation("ProjectCreatedBy")
+  projectTeamMemberships ProjectTeamMember[] @relation("ProjectTeamMember")
+  employeeRecord         Employee? @relation("EmployeeUser")
+  createdEmployees       Employee[] @relation("EmployeeCreatedBy")
+  attendanceApprovals    Attendance[] @relation("AttendanceApprovedBy")
+  createdAttendance      Attendance[] @relation("AttendanceCreatedBy")
+  createdInvoices        Invoice[] @relation("InvoiceCreatedBy")
+  createdReports         Report[] @relation("ReportCreatedBy")
+
   @@map("users")
 }
 
@@ -142,6 +155,8 @@ model Contact {
   deals       Deal[]
   activities  Activity[]
   notes       Note[]
+  
+  clientsAsPrimary Client[] @relation("ClientPrimaryContact")
 
   @@map("contacts")
 }
@@ -186,6 +201,8 @@ model Company {
   deals      Deal[]
   activities Activity[]
   notes      Note[]
+  
+  clients    Client[] @relation("ClientCompany")
 
   @@map("companies")
 }
@@ -361,8 +378,8 @@ model Client {
   deletedAt DateTime?
 
   // Relations
-  company        Company? @relation(fields: [companyId], references: [id])
-  primaryContact Contact? @relation(fields: [primaryContactId], references: [id])
+  company        Company? @relation("ClientCompany", fields: [companyId], references: [id])
+  primaryContact Contact? @relation("ClientPrimaryContact", fields: [primaryContactId], references: [id])
   accountManager User?    @relation("ClientAccountManager", fields: [accountManagerId], references: [id])
   createdBy      User     @relation("ClientCreatedBy", fields: [createdById], references: [id])
   
@@ -454,7 +471,7 @@ model Employee {
   
   // Relations
   managerId   String?
-  userId      String?
+  userId      String? @unique
   createdById String
   
   // Timestamps
@@ -688,4 +705,115 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+// New Enums
+enum ClientType {
+  INDIVIDUAL
+  CORPORATE
+}
+
+enum ClientStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ProjectStatus {
+  PLANNING
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum ProjectType {
+  FIXED_PRICE
+  TIME_AND_MATERIALS
+  RETAINER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERN
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  ON_LEAVE
+}
+
+enum SalaryType {
+  HOURLY
+  MONTHLY
+  YEARLY
+}
+
+enum WorkLocation {
+  OFFICE
+  REMOTE
+  HYBRID
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  WORK_FROM_HOME
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum ReportType {
+  SALES
+  ATTENDANCE
+  PROJECT
+  EMPLOYEE
+  FINANCIAL
+  CLIENT
+  CUSTOM
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  CSV
+  JSON
+}
+
+enum ReportStatus {
+  PENDING
+  GENERATING
+  COMPLETED
+  FAILED
 }
