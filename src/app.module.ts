@@ -20,6 +20,12 @@ import { LeadsModule } from './leads/leads.module';
 import { DealsModule } from './deals/deals.module';
 import { ActivitiesModule } from './activities/activities.module';
 import { NotesModule } from './notes/notes.module';
+import { ClientsModule } from './clients/clients.module';
+import { ProjectsModule } from './projects/projects.module';
+import { EmployeesModule } from './employees/employees.module';
+import { AttendanceModule } from './attendance/attendance.module';
+import { InvoicesModule } from './invoices/invoices.module';
+import { ReportsModule } from './reports/reports.module';
 
 // Middleware
 import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
@@ -76,6 +82,12 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     DealsModule,
     ActivitiesModule,
     NotesModule,
+    ClientsModule,
+    ProjectsModule,
+    EmployeesModule,
+    AttendanceModule,
+    InvoicesModule,
+    ReportsModule,
   ],
   providers: [
     AppResolver, 
